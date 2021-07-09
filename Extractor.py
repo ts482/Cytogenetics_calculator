@@ -8,6 +8,7 @@ import pandas as pd
 punct = r'()[]/'
 punct_dict = {s:0 for s in punct}
 
+
 def load_file(file= 'Cytogenetics_TS_Apr2021.xlsx', streamlit=False):
     '''
     Loads the excel file and drops the ID column
@@ -72,20 +73,28 @@ def properties_dict(karyotypes, properties = None):
         d[k] = v
     return {v:k for k,v in d.items()}
 
+
 def remove_artefact(row):
     '''
     Removes whitespaces and import artefacts from reports 
     Function to be used in conjunction with pd.DataFrame.apply, 
     and the column containing the cytogenetic report
     '''
-    if re.search('_x000D_$', row['Cytogenetics']):
-        return row['Cytogenetics'].strip()[:-7]
-    return row['Cytogenetics'].strip()
-
+    if pd.notna(row['Cytogenetics']):
+        if re.search('_x000D_$', row['Cytogenetics']):
+            return row['Cytogenetics'].replace(' ', '')[:-7]
+        return row['Cytogenetics'].replace(' ', '')
+    return 'Error'
 def gram_error(string):
     '''
     Recognise if there is a grammatical error within a karyotype report
     '''
+    if string == 'Error':
+        return 'String report missing'
+    if re.search('fail', string.lower()):
+        return 'String report indicates failure'
+    if not re.search(',', string):
+        return 'Missing comma'
     missing = list()
     for k in punct_dict:
         punct_dict[k] = len(re.findall(re.escape(k), string))
@@ -99,13 +108,19 @@ def gram_error(string):
         return f'missing grammar: {", ".join(missing)}'
     substring = re.split('/', string)
     for i, s in enumerate(substring):
-        chrom = s[:s.index(',')] #chromsome string
+        try:
+            chrom = s[:s.index(',')] #chromsome string
+        except ValueError:
+            return 'Part of report missing comma'
         if not re.search('idem', s):
             expected = 46
         expected -= len(re.findall('\-', s))
         expected += len(re.findall('\+', s))
         if re.search('[~]', s):
-            low_num, high_num = int(chrom[:2]), int(chrom[-2:]) 
+            try:
+                low_num, high_num = int(chrom[:2]), int(chrom[-2:])
+            except ValueError:
+                return 'Part of report not clearly defined by two chromosome numbers followed by comma (e.g. "43~45,")'
             if low_num <= expected <= high_num:
                 pass
             elif expected < low_num:
@@ -113,7 +128,10 @@ def gram_error(string):
             else:
                 return f'chromsome number higher than expected in {i+1} subsection'
         else:
-            num = int(chrom[:2])
+            try:
+                num = int(chrom[:2])
+            except ValueError:
+                return 'Start of report missing clear chromosome number followed by comma (e.g. "46,")'
             if expected == num:
                 pass
             elif expected > num:
