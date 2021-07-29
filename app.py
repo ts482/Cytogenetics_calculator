@@ -21,6 +21,11 @@ def karyotype_api():
     extracted = cyto.extract_from_string(input['karyotype_string'], props)
     return extracted
 
+# TODO bulk API to extract multiple strings at once
+
+# could easily add an endpoint that also allows the abnormalities for extraction to be specified
+# rather than using the app-level default 
+
 @app.route('/karyotype/ping', methods=['POST'])
 def ping():
     input = request.json
