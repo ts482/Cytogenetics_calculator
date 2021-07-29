@@ -300,8 +300,46 @@ def parse_karyotype(row, prop_dict):
         row[prop_dict[c]] = True
     return row
 
+def setup(abnormalities):
+    """
+    convert a list of abnormalities into a config for the extractor
+    """
+    prop_dict = properties_dict(karyotypes=None, properties=abnormalities)
+    return prop_dict
+
+def extract_from_string(karyotype, prop_dict):
+    """
+    Run extraction on a single karyotype string, extraction based on prop_dict
+    prop_dict can be created with setup()
+    This function guarantees the output will have a property key for every abnormality value in prop_dict
+    as well as some additional created by parse_karyotype
+    Anything in prop_dict that is not detected will default to False
+    """
+    input = {
+        'Cytogenetics': karyotype.strip(),
+        'Error': False,
+        'Error description': ""
+    }
+    result = parse_karyotype(input, prop_dict)
+    for abn in prop_dict.values():
+        if abn not in result:
+            result[abn] = False
+    output = {'error': result['Error'], 'error_message': result['Error description'], 'result': result}
+    return output
+
+def base_extraction():
+    ex = ["-Y", "-X", 'del11q', 'del12p', 
+    'del13q', 'del5q', 'del7q', 'idic(X)(q13)', 'isochromosome17q', 'Monosomy13', 
+    'Monosomy17', 'Monosomy5', 'Monosomy7', 't(1;3)', 't(11;16)(q23.3;p13.3)', 
+    't(12p)', 't(17p)', 't(2;11)', 't(3;21)', 't(3;5)', 't(5;10)', 't(5;12)', 
+    't(5;17)', 't(5;7)', 't(5q)', 't(1;22)', 'inv(3)', 't(3;3)', 't(6;9)', 
+    't(9;22)', 't(16;16)', 'inv(16)', 't(8;21)', 't(15;17)', 't(9;11)', 
+    't(6;11)', 't(10;11)', 't(v;11)']
+    return ex
+
 
 if __name__ == '__main__':
+    # process from excel file
     karyotypes = load_file()
     prop_dict = properties_dict(karyotypes=karyotypes)
     karyotypes['Cytogenetics'] = karyotypes.apply(remove_artefact, axis=1)
@@ -311,3 +349,11 @@ if __name__ == '__main__':
     results.loc[results['Error']==False] = results.loc[results['Error']==False].fillna(False)
     results['Error'] = results['Error'].astype(bool)
     results.to_excel('Cytogenetics_output_V4.xlsx')
+
+    #process from single string as in API
+    abn = base_extraction()
+    props = setup(abn)
+    report = "  45,X,-Y[17]/46,XY[3]   "
+    result = extract_from_string(report, props)
+    print(report)
+    print(result)
