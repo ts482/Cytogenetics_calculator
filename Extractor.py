@@ -193,14 +193,14 @@ def make_multi_translocation_dict(string):
         
     #adding arms if present
     if re.search('[pq]', string):
-        exp2 = '([pq]\d\d?)'
+        exp2 = '([pq]\d\d?\.?\d?\d?)'
         for g in range(len(chr_groups)-1):
-            exp2 = exp2 + ';([pq]\d\d?)'
+            exp2 = exp2 + ';([pq]\d\d?\.?\d?\d?)'
         arm_groups = list(re.search(exp2, string).groups())
         return {int(c):a for c,a in zip(chr_groups, arm_groups)}
     return chr_groups
 
-def check_trans_dict(trans_dict, a):
+def check_trans_dict(trans_dict, col_true):
     '''
     Takes in multi translocation dictionary and detects abnormalities associated
     with adjacent chromosome translocation
@@ -212,6 +212,7 @@ def check_trans_dict(trans_dict, a):
         for p in prop_dict:
             if re.search(p, f't({first_chr};{second_chr})'):
                 col_true.add(p)
+    return col_true
 
 def parse_karyotype(row, prop_dict):
     '''
@@ -252,7 +253,7 @@ def parse_karyotype(row, prop_dict):
             #checking multi-translocations
             if re.search('t\(\d\d?;\d\d?;\d\d?',a):
                 trans_dict = make_multi_translocation_dict(a)
-                check_trans_dict(trans_dict, a)
+                col_true = check_trans_dict(trans_dict, col_true)
             
             #counting number of markers present
             if re.search('mar', a):
