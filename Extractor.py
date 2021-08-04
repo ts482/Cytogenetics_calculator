@@ -106,8 +106,13 @@ def gram_error(string):
     #basic report errors
     if string == 'Error':
         error.append('String report missing')
+        
     if re.search('fail', string.lower()):
         error.append('String report indicates failure')
+    
+    #highlight if error contains uncertainty
+    if re.search('?', string):
+        error.append('Question mark in string means report is uncertain')
         
     #all reports should include commas somewhere 
     if not re.search(',', string):
@@ -219,17 +224,19 @@ def parse_karyotype(row, prop_dict):
     Working row by row on a dataframe, detects abnormalities
     and fills in boolean and integer counts.
     '''
-    #checking for error
     error = gram_error(row['Cytogenetics'])
+    permissible_errors = ['chromosome', 'Variable', 'constitutional', 'Question']
+    
+    #checking for error
     if error:
         row['Error description'] = error
-        #checking type of error is not permissible
         for e in error:
-            if not e.startswith('chromosome'):
-                if not e.startswith('Variable'):
-                    if not e.startswith('constitutional'):
-                        row['Error'] = True
-                        return row
+            for p_e in permissible_errors:
+                if e.startswith(p_e):
+                    break
+            else:
+                row['Error'] = True
+                return row
     
     #initialising counts and sets for abnormalities
     abnorms = set(re.split('/|,|\[', row['Cytogenetics']))
