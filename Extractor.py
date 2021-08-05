@@ -111,7 +111,7 @@ def gram_error(string):
         error.append('String report indicates failure')
     
     #highlight if error contains uncertainty
-    if re.search('?', string):
+    if re.search('\\?', string):
         error.append('Question mark in string means report is uncertain')
         
     #all reports should include commas somewhere 
