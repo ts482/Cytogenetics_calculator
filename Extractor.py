@@ -315,13 +315,14 @@ def setup(abnormalities):
     prop_dict = properties_dict(karyotypes=None, properties=abnormalities)
     return prop_dict
 
-def extract_from_string(karyotype, prop_dict):
+def extract_from_string(karyotype, prop_dict, bool_mode = 'string'):
     """
     Run extraction on a single karyotype string, extraction based on prop_dict
     prop_dict can be created with setup()
     This function guarantees the output will have a property key for every abnormality value in prop_dict
     as well as some additional created by parse_karyotype
     Anything in prop_dict that is not detected will default to False
+    bool_mode: return type for boolean values. If 'string' then True -> "True" and Talse -> "False", otherwise return bool. 
     """
     input = {
         'Cytogenetics': karyotype.strip(),
@@ -332,6 +333,12 @@ def extract_from_string(karyotype, prop_dict):
     for abn in prop_dict.values():
         if abn not in result:
             result[abn] = False
+    if bool_mode == 'string':
+        for abn in result:
+            if abn == 'Error':
+                continue
+            if type(result[abn]) == bool:
+                result[abn] = str(result[abn])
     output = {'error': result['Error'], 'error_message': result['Error description'], 'result': result}
     return output
 
