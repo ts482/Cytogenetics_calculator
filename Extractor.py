@@ -308,6 +308,61 @@ def parse_karyotype(row, prop_dict):
         row[prop_dict[c]] = True
     return row
 
+def update_using_fish(cyto_results, fish_results):
+    '''
+    Function that updates cyto_results using fish_results,
+    overriding if discrepancies exist.
+    
+    Params:
+    -------
+    cyto_results: dict
+        results from reading cytogenetic text reports
+        
+    fish_results: dict
+        manually inserted fish results, with each result inserted
+        represented by a key and its corresponding value is a boolean
+        indication of the results
+        
+    Returns:
+    --------
+    cyto_results: dict
+        cytogenetic 
+    '''
+    
+    #dictionary mapping FISH variables to list of related cytogenetic booleans
+    FISH_dict = {'FISH_t(8;21)': ['t(8;21)'],
+ 'FISH_inv(16)': ['inv(16)'],
+ 'FISH_t(15;17)': ['t(15;17)'],
+ 'FISH_Monosomy7': ['Monosomy7'],
+ 'FISH_del5q': ['del5q'],
+ 'FISH_MLL rearrangement': ['t(v;11)'],
+ 'FISH_MECOM rearrangement': ['t(3;3)','inv(3)']}
+    
+    #list of structural FISH abnormalities
+    struc_list = ['FISH_t(8;21)', 'FISH_inv(16)', 'FISH_t(15;17)', 
+                  'FISH_MLL rearrangement', 'FISH_MECOM rearrangement']
+    
+    #assuming there is no discrepancy until found
+    cyto_results['FISH discrepancy'] = False
+    
+    for k in fish_results:
+        for i in FISH_dict[k]:
+            if cyto_results['result'][i] != fish_results[k]:
+                #updating discrepancy status
+                cyto_results['FISH discrepancy'] = True
+                
+                #updating cytogenetic result
+                cyto_results['result'][i] = fish_results[k]
+                
+                #updating counts
+                cyto_results['result']['Number of cytogenetic abnormalities'] += 1
+                if k in struc_list:
+                    cyto_results['result']['Structural'] += 1
+                if k == 'FISH_Monosomy7':
+                    cyto_results['result']['Monosomy'] += 1
+            
+    return cyto_results
+
 def setup(abnormalities):
     """
     convert a list of abnormalities into a config for the extractor
@@ -315,7 +370,7 @@ def setup(abnormalities):
     prop_dict = properties_dict(karyotypes=None, properties=abnormalities)
     return prop_dict
 
-def extract_from_string(karyotype, prop_dict, bool_mode = 'string'):
+def extract_from_string(karyotype, prop_dict, bool_mode = 'string', fish = None):
     """
     Run extraction on a single karyotype string, extraction based on prop_dict
     prop_dict can be created with setup()
@@ -340,6 +395,10 @@ def extract_from_string(karyotype, prop_dict, bool_mode = 'string'):
             if type(result[abn]) == bool:
                 result[abn] = str(result[abn])
     output = {'error': result['Error'], 'error_message': result['Error description'], 'result': result}
+    
+    #using FISH
+    if fish:
+        output = update_using_fish(output, fish)
     return output
 
 def base_extraction():
@@ -368,7 +427,16 @@ if __name__ == '__main__':
     #process from single string as in API
     abn = base_extraction()
     props = setup(abn)
+    fish_results = {
+         'FISH_t(8;21)': True,
+         'FISH_inv(16)': False,
+         'FISH_t(15;17)': False,
+         'FISH_Monosomy7': True,
+         'FISH_del5q': False,
+         'FISH_MLL rearrangement': False,
+         'FISH_MECOM rearrangement': False
+        }
     report = "  45,X,-Y[17]/46,XY[3]   "
-    result = extract_from_string(report, props)
+    result = extract_from_string(report, props, fish=fish_results)
     print(report)
     print(result)
