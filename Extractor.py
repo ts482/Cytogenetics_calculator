@@ -308,6 +308,7 @@ def parse_karyotype(row, prop_dict):
         row[prop_dict[c]] = True
     return row
 
+
 def update_using_fish(cyto_results, fish_results):
     '''
     Function that updates cyto_results using fish_results,
@@ -326,42 +327,56 @@ def update_using_fish(cyto_results, fish_results):
     Returns:
     --------
     cyto_results: dict
-        cytogenetic 
+        updated cytogenetic results
     '''
     
     #dictionary mapping FISH variables to list of related cytogenetic booleans
-    FISH_dict = {'FISH_t(8;21)': ['t(8;21)'],
- 'FISH_inv(16)': ['inv(16)'],
- 'FISH_t(15;17)': ['t(15;17)'],
+    fish_dict = {'FISH_RUNX1-RUNX1T1': ['t(8;21)'],
+ 'FISH_CBFB-MYH11': ['inv(16)', 't(16;16)'],
+ 'FISH_PML-RARA': ['t(15;17)'],
  'FISH_Monosomy7': ['Monosomy7'],
+ 'FISH_Monosomy5': ['Monosomy5'],
  'FISH_del5q': ['del5q'],
- 'FISH_MLL rearrangement': ['t(v;11)'],
- 'FISH_MECOM rearrangement': ['t(3;3)','inv(3)']}
+ 'FISH_MLL': ['t(v;11)'],
+ 'FISH_MECOM': ['inv(3)','t(3;3)']}
     
     #list of structural FISH abnormalities
-    struc_list = ['FISH_t(8;21)', 'FISH_inv(16)', 'FISH_t(15;17)', 
-                  'FISH_MLL rearrangement', 'FISH_MECOM rearrangement']
+    struc_list = ['FISH_CBFB-MYH11', 'FISH_RUNX1-RUNX1T1', 'FISH_PML-RARA', 
+                  'FISH_MLL', 'FISH_MECOM']
+    mono_list = ['FISH_Monosomy5','FISH_Monosomy7']
     
+    #list of cytogenetic result abnormalities relating to v;11
+    eleven_list = ['t(11;16)(q23.3;p13.3)', 't(2;11)', 't(9;11)', 't(6;11)', 't(10;11)']
+    
+    
+    updated_results = cyto_results.copy()
     #assuming there is no discrepancy until found
-    cyto_results['FISH discrepancy'] = False
+    updated_results['FISH discrepancy'] = False
     
     for k in fish_results:
-        for i in FISH_dict[k]:
-            if cyto_results['result'][i] != fish_results[k]:
-                #updating discrepancy status
-                cyto_results['FISH discrepancy'] = True
-                
-                #updating cytogenetic result
-                cyto_results['result'][i] = fish_results[k]
-                
-                #updating counts
-                cyto_results['result']['Number of cytogenetic abnormalities'] += 1
+        if all([updated_results['result'][i] != fish_results[k] for i in fish_dict[k]]):
+            #updating discrepancy status
+            updated_results['FISH discrepancy'] = True
+            #updating cytogenetic result
+            updated_results['result'][fish_dict[k][0]] = fish_results[k]
+
+            #updating counts if FISH true, cyto false
+            if fish_results[k]:
+                updated_results['result']['Number of cytogenetic abnormalities'] += 1
                 if k in struc_list:
-                    cyto_results['result']['Structural'] += 1
-                if k == 'FISH_Monosomy7':
-                    cyto_results['result']['Monosomy'] += 1
+                    updated_results['result']['Structural'] += 1
+                if k in mono_list:
+                    updated_results['result']['Monosomy'] += 1
+                    
+            #edge case: setting all (v;11) to False if MLL is False
+            if k == 'FISH_MLL':
+                if not fish_results[k]:
+                    for e in eleven_list:
+                        updated_results['result'][e] = False
+                
             
-    return cyto_results
+    return updated_results
+
 
 def setup(abnormalities):
     """
@@ -427,15 +442,15 @@ if __name__ == '__main__':
     #process from single string as in API
     abn = base_extraction()
     props = setup(abn)
-    fish_results = {
-         'FISH_t(8;21)': True,
-         'FISH_inv(16)': False,
-         'FISH_t(15;17)': False,
-         'FISH_Monosomy7': True,
-         'FISH_del5q': False,
-         'FISH_MLL rearrangement': False,
-         'FISH_MECOM rearrangement': False
-        }
+    fish_results = {'FISH_RUNX1-RUNX1T1': False,
+     'FISH_CBFB-MYH11': False,
+     'FISH_PML-RARA': False,
+     'FISH_Monosomy7': False,
+     'FISH_Monosomy5': False,
+     'FISH_del5q': False,
+     'FISH_MLL': False,
+     'FISH_MECOM': False
+    }
     report = "  45,X,-Y[17]/46,XY[3]   "
     result = extract_from_string(report, props, fish=fish_results)
     print(report)
