@@ -18,7 +18,9 @@ def hello_world():
 @app.route('/karyotype/extract', methods=['POST'])
 def karyotype_api():
     input = request.json
-    extracted = cyto.extract_from_string(input['karyotype_string'], props)
+    if 'fish' not in input:
+        input['fish'] = None
+    extracted = cyto.extract_from_string(input['karyotype_string'], props, fish = input['fish'])
     return extracted
 
 # TODO bulk API to extract multiple strings at once

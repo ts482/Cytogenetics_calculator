@@ -374,7 +374,6 @@ def update_using_fish(cyto_results, fish_results):
                     for e in eleven_list:
                         updated_results['result'][e] = False
                 
-            
     return updated_results
 
 
@@ -409,10 +408,11 @@ def extract_from_string(karyotype, prop_dict, bool_mode = 'string', fish = None)
                 continue
             if type(result[abn]) == bool:
                 result[abn] = str(result[abn])
-    output = {'error': result['Error'], 'error_message': result['Error description'], 'result': result}
+    output = {'error': result['Error'], 'error_message': result['Error description'], 'result': result, 'fish_available':False}
     
     #using FISH
     if fish:
+        output['fish_available'] = True
         output = update_using_fish(output, fish)
     return output
 
