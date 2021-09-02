@@ -20,7 +20,10 @@ def karyotype_api():
     input = request.json
     if 'fish' not in input:
         input['fish'] = None
-    extracted = cyto.extract_from_string(input['karyotype_string'], props, fish = input['fish'])
+    bool_mode = 'string'
+    if 'bool_mode' in input:
+        bool_mode = input['bool_mode']
+    extracted = cyto.extract_from_string(input['karyotype_string'], props, bool_mode=bool_mode, fish = input['fish'])
     return extracted
 
 # TODO bulk API to extract multiple strings at once
