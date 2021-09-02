@@ -143,6 +143,7 @@ def gram_error(string):
             chrom = s[:s.index(',')] #chromosome string
         except ValueError:
             error.append('Part of report missing comma')
+            continue
         if not re.search('idem', s):
             expected = 46
         expected -= len(re.findall('\-', s))
@@ -163,6 +164,7 @@ def gram_error(string):
                 low_num, high_num = int(chrom[:2]), int(chrom[-2:])
             except ValueError:
                 error.append('Part of report not clearly defined by two chromosome numbers followed by comma (e.g. "43~45,")')
+                continue
             if low_num <= expected <= high_num:
                 pass
             elif expected > high_num:
@@ -176,6 +178,7 @@ def gram_error(string):
                 num = int(chrom[:2])
             except ValueError:
                 error.append('Start of report missing clear chromosome number followed by comma (e.g. "46,")')
+                continue
             if expected == num:
                 pass
             elif expected < num:
