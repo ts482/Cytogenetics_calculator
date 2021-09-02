@@ -378,7 +378,7 @@ def update_using_fish(cyto_results, fish_results):
             #to be false in accordance with FISH
             else:
                 for i in fish_dict[k]:
-                    updated_results['result'][fish_dict[k][i]] = False
+                    updated_results['result'][i] = False
                     
             #edge case: setting all (v;11) to False if MLL is False
             if k == 'FISH_MLL':
