@@ -358,6 +358,9 @@ def update_using_fish(cyto_results, fish_results):
     
     
     for k in fish_results:
+        if k not in fish_dict:
+            #this should at least trigger a warning in the response but good enough for now
+            continue
         if all([updated_results['result'][i] != fish_results[k] for i in fish_dict[k]]):
             #updating discrepancy status
             updated_results['FISH discrepancy'] = True
