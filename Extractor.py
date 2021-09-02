@@ -353,20 +353,29 @@ def update_using_fish(cyto_results, fish_results):
     #assuming there is no discrepancy until found
     updated_results['FISH discrepancy'] = False
     
+    
     for k in fish_results:
         if all([updated_results['result'][i] != fish_results[k] for i in fish_dict[k]]):
             #updating discrepancy status
             updated_results['FISH discrepancy'] = True
-            #updating cytogenetic result
-            updated_results['result'][fish_dict[k][0]] = fish_results[k]
+            
 
             #updating counts if FISH true, cyto false
             if fish_results[k]:
+                #updating cytogenetic result
+                updated_results['result'][fish_dict[k][0]] = True
+                
                 updated_results['result']['Number of cytogenetic abnormalities'] += 1
                 if k in struc_list:
                     updated_results['result']['Structural'] += 1
                 if k in mono_list:
                     updated_results['result']['Monosomy'] += 1
+            
+            #updating all items that would trigger cyto result to be true,
+            #to be false in accordance with FISH
+            else:
+                for i in fish_dict[k]:
+                    updated_results['result'][fish_dict[k][i]] = False
                     
             #edge case: setting all (v;11) to False if MLL is False
             if k == 'FISH_MLL':
