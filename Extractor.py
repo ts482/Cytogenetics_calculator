@@ -121,6 +121,10 @@ def gram_error(string):
     #checking for constitutional changes
     if re.search('[^a-z]?c[^p]', string) or re.search('[^a-z]c$', string):
         error.append('constitutional changes present')
+        
+    #incorrectly counts abnormalities if split character are together
+    if re.search('[/,[]{2}', ',['):
+        error.append('The following symbols must not be next to another or themselves: / , [')
     
     #grammatical rules regarding symbol ratios
     missing = list()
@@ -361,7 +365,7 @@ def update_using_fish(cyto_results, fish_results):
         if k not in fish_dict:
             #this should at least trigger a warning in the response but good enough for now
             continue
-        if all([updated_results['result'][i] != fish_results[k] for i in fish_dict[k]]):
+        if all([updated_results[i] != fish_results[k] for i in fish_dict[k]]):
             #updating discrepancy status
             updated_results['FISH discrepancy'] = True
             
@@ -369,25 +373,25 @@ def update_using_fish(cyto_results, fish_results):
             #updating counts if FISH true, cyto false
             if fish_results[k]:
                 #updating cytogenetic result
-                updated_results['result'][fish_dict[k][0]] = True
+                updated_results[fish_dict[k][0]] = True
                 
-                updated_results['result']['Number of cytogenetic abnormalities'] += 1
+                updated_results['Number of cytogenetic abnormalities'] += 1
                 if k in struc_list:
-                    updated_results['result']['Structural'] += 1
+                    updated_results['Structural'] += 1
                 if k in mono_list:
-                    updated_results['result']['Monosomy'] += 1
+                    updated_results['Monosomy'] += 1
             
             #updating all items that would trigger cyto result to be true,
             #to be false in accordance with FISH
             else:
                 for i in fish_dict[k]:
-                    updated_results['result'][i] = False
+                    updated_results[i] = False
                     
             #edge case: setting all (v;11) to False if MLL is False
             if k == 'FISH_MLL':
                 if not fish_results[k]:
                     for e in eleven_list:
-                        updated_results['result'][e] = False
+                        updated_results[e] = False
                 
     return updated_results
 
@@ -417,6 +421,11 @@ def extract_from_string(karyotype, prop_dict, bool_mode = 'string', fish = None)
     for abn in prop_dict.values():
         if abn not in result:
             result[abn] = False
+            
+    #using FISH
+    if fish:
+        result = update_using_fish(result, fish)
+
     if bool_mode == 'string':
         for abn in result:
             if abn == 'Error':
@@ -425,10 +434,9 @@ def extract_from_string(karyotype, prop_dict, bool_mode = 'string', fish = None)
                 result[abn] = str(result[abn])
     output = {'error': result['Error'], 'error_message': result['Error description'], 'result': result, 'fish_available':False}
     
-    #using FISH
     if fish:
         output['fish_available'] = True
-        output = update_using_fish(output, fish)
+    
     return output
 
 def base_extraction():
