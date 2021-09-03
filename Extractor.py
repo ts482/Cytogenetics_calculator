@@ -425,6 +425,8 @@ def extract_from_string(karyotype, prop_dict, bool_mode = 'string', fish = None)
     #using FISH
     if fish:
         result = update_using_fish(result, fish)
+    else:
+        result['FISH discrepancy'] = False
 
     if bool_mode == 'string':
         for abn in result:
