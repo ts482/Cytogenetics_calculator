@@ -123,7 +123,7 @@ def gram_error(string):
         error.append('constitutional changes present')
         
     #incorrectly counts abnormalities if split character are together
-    if re.search('[/,[]{2}', ',['):
+    if re.search('[/,[]{2}', string):
         error.append('The following symbols must not be next to another or themselves: / , [')
     
     #grammatical rules regarding symbol ratios
