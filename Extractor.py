@@ -415,7 +415,7 @@ def extract_from_string(karyotype, prop_dict, bool_mode = 'string', fish = None)
     input = {
         'Cytogenetics': karyotype.strip(),
         'Error': False,
-        'Error description': ""
+        'Error description': []
     }
     result = parse_karyotype(input, prop_dict)
     for abn in prop_dict.values():
