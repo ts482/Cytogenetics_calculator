@@ -16,6 +16,7 @@ def hello_world():
     return "<p>Hello, World!</p>"
 
 @app.route('/karyotype/extract', methods=['POST'])
+@app.route('/extract/karyotype/extract', methods=['post']) #for rosalind proxy
 def karyotype_api():
     input = request.json
     if 'fish' not in input:
