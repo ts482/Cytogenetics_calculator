@@ -102,6 +102,7 @@ def gram_error(string):
     for each report section
     '''
     error = []
+    warning = []
     
     #basic report errors
     if string == 'Error':
@@ -112,15 +113,20 @@ def gram_error(string):
     
     #highlight if error contains uncertainty
     if re.search('\\?', string):
-        error.append('Question mark in string means report is uncertain')
+        warning.append('Question mark in string means report is uncertain')
         
     #all reports should include commas somewhere 
     if not re.search(',', string):
         error.append('Missing comma')
+
+    #checking for YX
+
+    if re.search('YX', string):
+        warning.appened('"YX" appears to be wrong way round. Did you mean "XY"?')
         
     #checking for constitutional changes
     if re.search('[^a-z]?c[^p]', string) or re.search('[^a-z]c$', string):
-        error.append('constitutional changes present')
+        warning.append('constitutional changes present')
         
     #incorrectly counts abnormalities if split character are together
     if re.search('[/,[]{2}', string):
@@ -160,7 +166,7 @@ def gram_error(string):
                 #error if variable number of markers included (e.g. +2~4mar)
                 if tilda_present:
                     d = tilda_present.group(1)
-                    error.append(f'Variable number of markers in report. Minimum number ({d}) used by default')
+                    warning.append(f'Variable number of markers in report. Minimum number ({d}) used by default')
         
         #in the case of a range of potential chromosome counts
         if re.search('[~]', chrom):
@@ -172,9 +178,9 @@ def gram_error(string):
             if low_num <= expected <= high_num:
                 pass
             elif expected > high_num:
-                error.append(f'chromosome number lower than expected in subsection number {i+1}')
+                warning.append(f'chromosome number lower than expected in subsection number {i+1}')
             else:
-                error.append(f'chromosome number higher than expected in subsection number {i+1}')
+                warning.append(f'chromosome number higher than expected in subsection number {i+1}')
                 
         #if only one chromosome count is present
         else:
@@ -186,10 +192,10 @@ def gram_error(string):
             if expected == num:
                 pass
             elif expected < num:
-                error.append(f'chromosome number higher than expected in subsection number {i+1}')
+                warning.append(f'chromosome number higher than expected in subsection number {i+1}')
             else:
-                error.append(f'chromosome number lower than expected in subsection number {i+1}')
-    return error
+                warning.append(f'chromosome number lower than expected in subsection number {i+1}')
+    return error, warning
 
 def make_multi_translocation_dict(string):
     '''
@@ -231,19 +237,15 @@ def parse_karyotype(row, prop_dict):
     Working row by row on a dataframe, detects abnormalities
     and fills in boolean and integer counts.
     '''
-    error = gram_error(row['Cytogenetics'])
-    permissible_errors = ['chromosome', 'Variable', 'constitutional', 'Question']
-    
+    error, warning = gram_error(row['Cytogenetics'])
+
+    row['Warnings'] = warning
+        
     #checking for error
     if error:
         row['Error description'] = error
-        for e in error:
-            for p_e in permissible_errors:
-                if e.startswith(p_e):
-                    break
-            else:
-                row['Error'] = True
-                return row
+        row['Error'] = True
+        return row
     
     #initialising counts and sets for abnormalities
     abnorms = set(re.split('/|,|\[', row['Cytogenetics']))
@@ -256,7 +258,7 @@ def parse_karyotype(row, prop_dict):
     seventeen_p = False
     for a in abnorms:
         #cremoving normal report segments
-        if re.fullmatch('(\d\d([~-]\d\d)?|X[XY]?|(cp)?\d\d?\]|idem)(\??c)?', a):
+        if re.fullmatch('(\d\d([~-]\d\d)?|[XY][XY]?|(cp)?\d\d?\]|idem)(\??c)?', a):
             removed.add(a)
 #         if re.search('mar', a): #no longer the case to remove mar
 #             removed.add(a)
@@ -434,7 +436,8 @@ def extract_from_string(karyotype, prop_dict, bool_mode = 'string', fish = None)
                 continue
             if type(result[abn]) == bool:
                 result[abn] = str(result[abn])
-    output = {'error': result['Error'], 'error_message': result['Error description'], 'result': result, 'fish_available':False}
+    output = {'error': result['Error'], 'error_message': result['Error description'],
+              'Warnings': result['Warnings'], 'result': result, 'fish_available':False}
     
     if fish:
         output['fish_available'] = True
@@ -454,15 +457,15 @@ def base_extraction():
 
 if __name__ == '__main__':
     # process from excel file
-    karyotypes = load_file()
-    prop_dict = properties_dict(karyotypes=karyotypes)
-    karyotypes['Cytogenetics'] = karyotypes.apply(remove_artefact, axis=1)
-    karyotypes['Error'] = False
-    karyotypes['Error description'] = None
-    results = karyotypes.apply(parse_karyotype, axis=1, args=(prop_dict,))
-    results.loc[results['Error']==False] = results.loc[results['Error']==False].fillna(False)
-    results['Error'] = results['Error'].astype(bool)
-    results.to_excel('Cytogenetics_output_V4.xlsx')
+#    karyotypes = load_file()
+#    prop_dict = properties_dict(karyotypes=karyotypes)
+#    karyotypes['Cytogenetics'] = karyotypes.apply(remove_artefact, axis=1)
+#    karyotypes['Error'] = False
+#    karyotypes['Error description'] = None
+#    results = karyotypes.apply(parse_karyotype, axis=1, args=(prop_dict,))
+#    results.loc[results['Error']==False] = results.loc[results['Error']==False].fillna(False)
+#    results['Error'] = results['Error'].astype(bool)
+#    results.to_excel('Cytogenetics_output_V4.xlsx')
 
     #process from single string as in API
     abn = base_extraction()
@@ -477,6 +480,7 @@ if __name__ == '__main__':
      'FISH_MECOM': False
     }
     report = "  45,X,-Y[17]/46,XY[3]   "
+    report = "46,Y,[16]"
     result = extract_from_string(report, props, fish=fish_results)
     print(report)
     print(result)
