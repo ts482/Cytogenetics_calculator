@@ -29,7 +29,7 @@ def download_link(object_to_download, download_filename, download_link_text):
 
 
 st.write('# Cytogenetics calculator')
-file = st.file_uploader("Upload excel here") 
+file = st.file_uploader("Upload CSV file here")
 if file:
     karyotypes = load_file(file)
     prop_dict = properties_dict(karyotypes=karyotypes)

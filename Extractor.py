@@ -2,14 +2,14 @@
 
 import re
 import pandas as pd
-#import streamlit as st
+import streamlit as st
 #import base64
 
 punct = r'()[]/'
 punct_dict = {s:0 for s in punct}
 
 
-def load_file(file= 'Cytogenetics_TS_Apr2021.xlsx', streamlit=False):
+def load_file(file):
     '''
     Loads the excel file and drops the ID column
     
@@ -23,9 +23,8 @@ def load_file(file= 'Cytogenetics_TS_Apr2021.xlsx', streamlit=False):
     streamlit: bool, default False
         whether the streamlit interface should be used
     '''
-    if streamlit:
-        file = st.file_uploader("Upload excel here")
-    karyotypes = pd.read_excel(file)    
+
+    karyotypes = pd.read_csv(file)    
     karyotypes = karyotypes.drop(columns='ID')
     
     return karyotypes
