@@ -2,7 +2,7 @@
 
 import re
 import pandas as pd
-import streamlit as st
+#import streamlit as st
 #import base64
 
 punct = r'()[]/'
@@ -102,6 +102,7 @@ def gram_error(string):
     '''
     error = []
     warning = []
+    chr_count = {}
     
     #basic report errors
     if string == 'Error':
@@ -174,6 +175,7 @@ def gram_error(string):
             except ValueError:
                 error.append('Part of report not clearly defined by two chromosome numbers followed by comma (e.g. "43~45,")')
                 continue
+            chr_count['Reported number'] = str(low_num) + '~' + str(high_num)
             if low_num <= expected <= high_num:
                 pass
             elif expected > high_num:
@@ -188,13 +190,14 @@ def gram_error(string):
             except ValueError:
                 error.append('Start of report missing clear chromosome number followed by comma (e.g. "46,")')
                 continue
+            chr_count['Reported number'] = num
             if expected == num:
                 pass
             elif expected < num:
                 warning.append(f'chromosome number higher than expected in subsection number {i+1}')
             else:
                 warning.append(f'chromosome number lower than expected in subsection number {i+1}')
-    return error, warning
+    return error, warning, chr_count
 
 def make_multi_translocation_dict(string):
     '''
@@ -236,10 +239,10 @@ def parse_karyotype(row, prop_dict):
     Working row by row on a dataframe, detects abnormalities
     and fills in boolean and integer counts.
     '''
-    error, warning = gram_error(row['Cytogenetics'])
+    error, warning, chr_count = gram_error(row['Cytogenetics'])
 
     row['Warnings'] = warning
-        
+    row['chr_count'] = chr_count
     #checking for error
     if error:
         row['Error description'] = error
