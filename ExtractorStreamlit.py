@@ -39,7 +39,7 @@ if file:
     results = karyotypes.apply(parse_karyotype, axis=1, args= (prop_dict,))
     results.loc[results['Error'] == False] = results.loc[results['Error']==False].fillna(False)
     results['Error'] = results['Error'].astype(bool)
-    st.dataframe(results)
+    #st.dataframe(results)
     
     if st.button('Download Dataframe as CSV'):
         tmp_download_link = download_link(results, 'YOUR_DF.csv', 'Click here to download your data!')
