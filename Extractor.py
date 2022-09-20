@@ -74,6 +74,10 @@ def properties_dict(karyotypes, properties = None):
         #creating special case for for t(v;11)
         if v == 't\\(v;11\\)':
             v = '(t\\(\d+;11\\))|(t\\(11;\d+\\))'
+        #another special case for t(3q26.2;v)
+        if v == 't\\(3\\)\\(q26\\.2;v\\)':
+            v = '(t\\(\d+;3\\)\\([pq]\d+(\\.\d+)?;q26\\.2\\))|(t\\(3;\d+\\)\\(q26\\.2;[pq]\d+(\\.\d+)\\))'
+
         
         d[k] = v
     return {v:k for k,v in d.items()}
@@ -299,6 +303,7 @@ def parse_karyotype(row, prop_dict, verbose=False):
     removed = set()
     col_true = set()
     mono = 0
+    poly = 0
     struc = 0
     der = 0
     mar = 0
@@ -364,6 +369,13 @@ def parse_karyotype(row, prop_dict, verbose=False):
                 #detecting number of structular changes
                  #if re.search('[inv|t].*\).*\)', a): # old definition
 
+
+            #detecting presence of polysomies
+            if re.fullmatch('\+\d+|\+[XY]', a):
+                poly += 1
+                if verbose:
+                    verbose_dict[a].append('polysomy count + 1')
+
             #searching for structural changes
             if not re.fullmatch('[+\-]\d+c?|[+\-][XY]c?', a):
                 struc += 1
@@ -403,6 +415,7 @@ def parse_karyotype(row, prop_dict, verbose=False):
     row['Number of cytogenetic abnormalities'] = len(abnorms) + der + mar #no longer having a mar count
     
     row['Monosomy'] = mono
+    row['Polysomy'] = poly
     row['Structural'] = struc
     row['abnormal(17p)'] = seventeen_p
     for c in col_true:
@@ -567,7 +580,8 @@ def base_extraction():
     't(12p)', 't(17p)', 't(2;11)', 't(3;21)', 't(3;5)', 't(5;10)', 't(5;12)', 
     't(5;17)', 't(5;7)', 't(5q)', 't(1;22)', 'inv(3)', 't(3;3)', 't(6;9)', 
     't(9;22)', 't(16;16)', 'inv(16)', 't(8;21)', 't(15;17)', 't(9;11)', 
-    't(6;11)', 't(10;11)', 't(v;11)']
+    't(6;11)', 't(10;11)', 't(8;16)(p11;p13)', 't(3q26.2;v)',
+          't(v;11)']
     return ex
 
 VERBOSE = True
@@ -595,8 +609,9 @@ if __name__ == '__main__':
      'FISH_MLL': False,
      'FISH_MECOM': False
     }
-    report = "  45,X,-Y[17]/46,XY[3]   "
-    report = "47,XY,+21c[6]/48,idem,+11,der(19)t(1;19)(q23;p13.3)[4]"
+    #report = "  45,X,-Y[17]/46,XY[3]   "
+    #report = "47,XY,+21c[6]/48,idem,+11,der(19)t(1;19)(q23;p13.3)[4]"
+    report = "47,XY,+11,t(3;19)(q26.2;p13.3)[4]"
     #report = "46,XY, -17[16]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE)
     print(report)
