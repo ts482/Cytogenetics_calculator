@@ -1,4 +1,5 @@
-*.pyc
+*.py[cod]
+__pycache__/
 Cytogenetics_output_V4.xlsx
 Cytogenetics_TS_Apr2021.xlsx
 Cytogenetics_TS_Apr2021.csv
