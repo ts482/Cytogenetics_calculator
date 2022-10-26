@@ -15,3 +15,24 @@ Send a request with FISH results
 ```
 curl -i -H "Content-Type: application/json" -X POST -d '{"karyotype_string":"  45,X,-Y[17]/46,XY[3]   ", "fish":{"FISH_RUNX1-RUNX1T1":false}}' http://localhost:5000/karyotype/extract
 ```
+
+## configs
+To modify the list of variants that is specifically flagged in the output, run the list of abnormalities through "setup" then add the results to the "configs" dict. E.g.
+```
+configs["BJH2021"] = cyto.setup(cyto.base_extraction())
+```
+Where cyto.base_extraction returns a list of strings. 
+
+### Use a different config from API
+Set the "version" in the API request. Compare results for different configs:
+
+```
+curl -i -H "Content-Type: application/json" -X POST -d '{"karyotype_string":"  46,xx,t(8;16)(p11;p13)[20]   ", "version": "ELN2022"}' http://localhost:5000/karyotype/extract
+
+curl -i -H "Content-Type: application/json" -X POST -d '{"karyotype_string":"  46,xx,t(8;16)(p11;p13)[20]   ", "version": "BJH2021"}' http://localhost:5000/karyotype/extract
+```
+
+Test whether t(8;16)(p11.2;p13.3) is counted as t(8;16)(p11;p13)
+```
+curl -i -H "Content-Type: application/json" -X POST -d '{"karyotype_string":"  46,xx,t(8;16)(p11.2;p13.3)[20]   ", "version": "ELN2022"}' http://localhost:5000/karyotype/extract
+```
