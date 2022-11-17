@@ -601,6 +601,12 @@ def extraction_2022():
           't(v;11)']
     return ex
 
+def available_configs():
+    configs = {}
+    configs["BJH2021"] = setup(base_extraction())
+    configs["ELN2022"] = setup(extraction_2022())
+    return configs
+
 VERBOSE = True
 if __name__ == '__main__':
     # process from excel file
