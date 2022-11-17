@@ -16,6 +16,19 @@ Send a request with FISH results
 curl -i -H "Content-Type: application/json" -X POST -d '{"karyotype_string":"  45,X,-Y[17]/46,XY[3]   ", "fish":{"FISH_RUNX1-RUNX1T1":false}}' http://localhost:5000/karyotype/extract
 ```
 
+# CLI
+The CLI can be used for testing or processing full files without starting the streamlit app. By default the output file name is 
+saved as [input_filename]_extracted.csv.
+```
+python cli.py --file=ELN2022_examples_v2.csv --version=ELN2022
+```
+
+For full list of options use
+```
+python cli.py --help
+```
+
+
 ## configs
 To modify the list of variants that is specifically flagged in the output, run the list of abnormalities through "setup" then add the results to the "configs" dict. E.g.
 ```
