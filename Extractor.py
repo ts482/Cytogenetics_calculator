@@ -67,9 +67,15 @@ def properties_dict(karyotypes, properties = None):
                 f = v[:m.start()] + '(' + m.group()[:-1] + \
                     ')(' + m.group()[-1]+ v[m.end():]
             v=f
+        
+        
             
         #creating escape characters for strings
         v = re.escape(v)
+        
+        #special case for dots
+        if v == "t\(8;16\)\(p11;p13\)":
+            v = "t\(8;16\)\(p11\.?\d?;p13\.?\d?\)"
         
         #creating special case for for t(v;11)
         if v == 't\\(v;11\\)':
@@ -359,7 +365,7 @@ def parse_karyotype(row, prop_dict, verbose=False):
                 else:
                     mar += 1
                     if verbose:
-                        verbose_dict[a] = f'markers_added: 1'
+                        verbose_dict[a] = 'markers_added: 1'
             
             #detecting presence on monosomies
             if re.fullmatch('-\d+|-[XY]', a):
@@ -609,7 +615,8 @@ if __name__ == '__main__':
 #    results.to_excel('Cytogenetics_output_V4.xlsx')
 
     #process from single string as in API
-    abn = base_extraction()
+    #abn = base_extraction()
+    abn = extraction_2022()
     props = setup(abn)
     fish_results = {'FISH_RUNX1-RUNX1T1': False,
      'FISH_CBFB-MYH11': False,
@@ -622,7 +629,8 @@ if __name__ == '__main__':
     }
     #report = "  45,X,-Y[17]/46,XY[3]   "
     #report = "47,XY,+21c[6]/48,idem,+11,der(19)t(1;19)(q23;p13.3)[4]"
-    report = "47,XY,+11,t(3;19)(q26.2;p13.3)[4]"
+    #report = "47,XY,+11,t(3;19)(q26.2;p13.3)[4]"
+    report = " 46,xx,t(8;16)(p11.2;p13.3)[20]"
     #report = "46,XY, -17[16]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE)
     print(report)
