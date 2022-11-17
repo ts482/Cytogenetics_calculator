@@ -1,4 +1,3 @@
-from distutils.command.config import config
 from flask import Flask, request
 from flask_cors import CORS
 import Extractor as cyto
