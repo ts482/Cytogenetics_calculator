@@ -8,9 +8,7 @@ app = Flask(__name__)
 CORS(app)
 
 #setup
-configs = {}
-configs["BJH2021"] = cyto.setup(cyto.base_extraction())
-configs["ELN2022"] = cyto.setup(cyto.extraction_2022())
+configs = cyto.available_configs()
 
 @app.route("/")
 def hello_world():
