@@ -82,7 +82,7 @@ def properties_dict(karyotypes, properties = None):
             v = '(t\\(\d+;11\\))|(t\\(11;\d+\\))'
         #another special case for t(3q26.2;v)
         if v == 't\\(3\\)\\(q26\\.2;v\\)':
-            v = '(t\\(\d+;3\\)\\([pq]\d+(\\.\d+)?;q26\\.2\\))|(t\\(3;\d+\\)\\(q26\\.2;[pq]\d+(\\.\d+)\\))'
+            v = '(t\(\d+;3\)\([pq]\d+(\.\d+)?;q26\.2\))|(t\(3;\d+\)\(q26\.2;[pq]\d+(\.\d+)?\))'
 
         
         d[k] = v
@@ -636,8 +636,11 @@ if __name__ == '__main__':
     #report = "  45,X,-Y[17]/46,XY[3]   "
     #report = "47,XY,+21c[6]/48,idem,+11,der(19)t(1;19)(q23;p13.3)[4]"
     #report = "47,XY,+11,t(3;19)(q26.2;p13.3)[4]"
-    report = " 46,xx,t(8;16)(p11.2;p13.3)[20]"
+    #report = " 46,xx,t(8;16)(p11.2;p13.3)[20]"
     #report = "46,XY, -17[16]"
+    #report = "45,XX,t(3;21)(q26;q?11.2),del(5)(q23-31q33),-7[14]"
+    report = "46,XX,t(3;12)(q26;p13)[18]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE)
     print(report)
     print(result)
+    #print(props)
