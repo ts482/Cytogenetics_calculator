@@ -82,7 +82,7 @@ def properties_dict(karyotypes, properties = None):
             v = '(t\\(\d+;11\\))|(t\\(11;\d+\\))'
         #another special case for t(3q26.2;v)
         if v == 't\\(3\\)\\(q26\\.2;v\\)':
-            v = '(t\(\d+;3\)\([pq]\d+(\.\d+)?;q26\.2\))|(t\(3;\d+\)\(q26\.2;[pq]\d+(\.\d+)?\))'
+            v = '(t\(\d+;3\)\([pq]\d+(\.\d+)?;q26(\.2)?\))|(t\(3;\d+\)\(q26(\.2)?;[pq]\d+(\.\d+)?\))'
 
         
         d[k] = v
@@ -124,6 +124,9 @@ def gram_error(string, verbose=False):
         
     if re.search('fail', string.lower()):
         error.append('String report indicates failure')
+        
+    if re.search('or', string.lower()):
+        error.append('String contains \'or\' and therefore cannot be interpreted')
     
     #highlight if error contains uncertainty
     if re.search('\\?', string):
@@ -168,7 +171,7 @@ def gram_error(string, verbose=False):
         except ValueError:
             error.append('Part of report missing comma')
             continue
-        if not re.search('idem', s):
+        if not re.search('idem|sd?l', s):
             expected = 46
         expected -= len(re.findall('\-', s))
         expected += len(re.findall('\+', s))
@@ -238,7 +241,7 @@ def make_multi_translocation_dict(string):
         return {int(c):a for c,a in zip(chr_groups, arm_groups)}
     return chr_groups
 
-def check_trans_dict(trans_dict, col_true, verbose=False):
+def check_trans_dict(trans_dict, col_true,prop_dict, verbose=False):
     '''
     Takes in multi translocation dictionary and detects abnormalities associated
     with adjacent chromosome translocation
@@ -262,7 +265,7 @@ def two_part_translocation_check(two_part_translocation,col_true, prop_dict,
                                  verbose=False):
     if verbose:
         verbose_list = []
-    match = re.search('t\(([XY\d]{1,2});([XY\d]{1,2})\)\(([pq])\d*;([pq])\d*\)',
+    match = re.search('t\(([XY\d]{1,2});([XY\d]{1,2})\)\(([pq])\d*(?:\.\d+)?;([pq])\d*(?:\.\d+)?\)',
               two_part_translocation)
     first_string = 't(' + match.group(1) + ')(' + match.group(3) + ')'
     second_string = 't(' + match.group(2) + ')(' + match.group(4) + ')'
@@ -296,6 +299,8 @@ def parse_karyotype(row, prop_dict, verbose=False):
     if error:
         row['Error description'] = error
         row['Error'] = True
+        if verbose:
+            row['verbose'] = "see error description"
         return row
     
     verbose_dict = {}
@@ -305,7 +310,10 @@ def parse_karyotype(row, prop_dict, verbose=False):
     full_string = re.sub('\?', '', full_string)
     
     #initialising counts and sets for abnormalities
-    abnorms = set(re.split('/|,|\[', full_string))
+    abnorms = list(re.split('/|,|\[', full_string))
+    #set_abnorms = set(abnorms) 
+    # if change to list data structure
+    # ruins functionality try converting part back to a set
     removed = set()
     col_true = set()
     mono = 0
@@ -318,7 +326,7 @@ def parse_karyotype(row, prop_dict, verbose=False):
         if verbose:
             verbose_dict[a] = []
         #cremoving normal report segments
-        if re.fullmatch('(\d\d([~-]\d\d)?|[XY][XY]?|(cp)?\d\d?\]|idem)(\??c)?', a):
+        if re.fullmatch('(\d\d([~-]\d\d)?|[XY][XY]?|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?', a):
             removed.add(a)
             if verbose:
                 if a.endswith(']'):
@@ -336,14 +344,15 @@ def parse_karyotype(row, prop_dict, verbose=False):
                 trans_dict = make_multi_translocation_dict(a)
                 if verbose:
                     col_true, verbose_list = \
-                        check_trans_dict(trans_dict, col_true, verbose=True)
+                        check_trans_dict(trans_dict, col_true,prop_dict,
+                                         verbose=True)
                     for v in verbose_list:
                         verbose_dict[a].append(v)
                 else:
                     col_true = check_trans_dict(trans_dict, col_true)
 
             #checking two-part translocations
-            if re.search('t\(([XY\d]{1,2});([XY\d]{1,2})\)\(([pq])\d*;([pq])\d*\)',
+            if re.search('t\(([XY\d]{1,2});([XY\d]{1,2})\)\(([pq])\d*(\.\d+)?;([pq])\d*(\.\d+)?\)',
                          a):
                 if verbose:
                     col_true, verbose_list = two_part_translocation_check(a,
@@ -417,7 +426,7 @@ def parse_karyotype(row, prop_dict, verbose=False):
                         verbose_dict[a].append(prop_dict[p])
                     
     #abnormality count is equal to all non-removed + der is double counted + mar count
-    abnorms = abnorms.difference(removed)
+    abnorms = [ab for ab in abnorms if ab not in removed]
     row['Number of cytogenetic abnormalities'] = len(abnorms) + der + mar #no longer having a mar count
     
     row['Monosomy'] = mono
@@ -633,13 +642,13 @@ if __name__ == '__main__':
      'FISH_MLL': False,
      'FISH_MECOM': False
     }
-    #report = "  45,X,-Y[17]/46,XY[3]   "
-    #report = "47,XY,+21c[6]/48,idem,+11,der(19)t(1;19)(q23;p13.3)[4]"
+    #report = "  44,X,-Y,-Y[17]/46,XY[3]   "
+    report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
     #report = "47,XY,+11,t(3;19)(q26.2;p13.3)[4]"
     #report = " 46,xx,t(8;16)(p11.2;p13.3)[20]"
     #report = "46,XY, -17[16]"
     #report = "45,XX,t(3;21)(q26;q?11.2),del(5)(q23-31q33),-7[14]"
-    report = "46,XX,t(3;12)(q26;p13)[18]"
+    #report = "46,XX,t(3;12)(q26.2;p13)[18]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE)
     print(report)
     print(result)
