@@ -370,11 +370,11 @@ def parse_karyotype(row, prop_dict, verbose=False):
                 if mar_plural:
                     mar += int(mar_plural.groups()[0])
                     if verbose:
-                        verbose_dict[a] = f'markers_added: {int(mar_plural.groups()[0])}'
+                        verbose_dict[a].append(f'markers_added: {int(mar_plural.groups()[0])}')
                 else:
                     mar += 1
                     if verbose:
-                        verbose_dict[a] = 'markers_added: 1'
+                        verbose_dict[a].append('markers_added: 1')
             
             #detecting presence on monosomies
             if re.fullmatch('-\d+|-[XY]', a):
@@ -552,7 +552,7 @@ def extract_from_string(karyotype, prop_dict, bool_mode = 'string', fish = None,
     bool_mode: return type for boolean values. If 'string' then True -> "True" and Talse -> "False", otherwise return bool. 
     """
     input = {
-        'Cytogenetics': karyotype.strip(),
+        'Cytogenetics': re.sub('\s', '',karyotype),
         'Error': False,
         'Error description': []
     }
@@ -643,12 +643,12 @@ if __name__ == '__main__':
      'FISH_MECOM': False
     }
     #report = "  44,X,-Y,-Y[17]/46,XY[3]   "
-    report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
+    #report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
     #report = "47,XY,+11,t(3;19)(q26.2;p13.3)[4]"
     #report = " 46,xx,t(8;16)(p11.2;p13.3)[20]"
-    #report = "46,XY, -17[16]"
     #report = "45,XX,t(3;21)(q26;q?11.2),del(5)(q23-31q33),-7[14]"
     #report = "46,XX,t(3;12)(q26.2;p13)[18]"
+    report = "46,XY,del(3)(p13),del(5)(q15q33),del(7)(p13p22),add(12)(p13)[3]/45,sl,dic(20;21)(q1;p1)[5]/47,sl1,+add(21)(p1),+mar[2]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE)
     print(report)
     print(result)
