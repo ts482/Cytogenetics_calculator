@@ -49,3 +49,10 @@ Test whether t(8;16)(p11.2;p13.3) is counted as t(8;16)(p11;p13)
 ```
 curl -i -H "Content-Type: application/json" -X POST -d '{"karyotype_string":"  46,xx,t(8;16)(p11.2;p13.3)[20]   ", "version": "ELN2022"}' http://localhost:5000/karyotype/extract
 ```
+
+## tests
+Tests are written with pytest. To run all tests use
+```
+$ pytest
+```
+From the project root.
