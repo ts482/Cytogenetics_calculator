@@ -283,6 +283,208 @@ def two_part_translocation_check(two_part_translocation,col_true, prop_dict,
     return col_true
     
 
+
+def parse_karyotype_clone(row, prop_dict, verbose=False):
+    '''
+    Working row by row on a dataframe, detects abnormalities
+    and fills in boolean and integer counts.
+    Second function version: using information about each clone
+    '''
+    error, warning, chr_count = gram_error(row['Cytogenetics'])
+    if verbose:
+        row['chr_count'] = chr_count
+        
+    #including warnings
+    row['Warnings'] = warning
+    
+    #checking for error
+    if error:
+        row['Error description'] = error
+        row['Error'] = True
+        if verbose:
+            row['verbose'] = "see error description"
+        return row
+    
+    
+
+    #preparing string before splitting to abnormalities
+    full_string = row['Cytogenetics']
+    full_string = re.sub('\?', '', full_string)
+    
+    #splitting into clones
+    clones = list(re.split('/', full_string))
+    
+    #clone_dict = {}
+    sl_dict = {}
+    
+    all_clone_abnorms = []
+    abnorm_set = set()
+    
+    for i,clone in enumerate(clones):
+    
+        #initialising counts and sets for abnormalities
+        clone_abnorms = list(re.split(',|\[', clone))
+        
+        if re.search('idem',clone):
+            clone_abnorms = clone_abnorms + all_clone_abnorms[i-1]
+        
+        #looking for presence of sl groups
+        sl_group = re.search('(sd?l\d?)', clone)
+        if sl_group:
+            if sl_group in sl_dict:
+                clone_abnorms = clone_abnorms + all_clone_abnorms[sl_dict[sl_group]]
+            else:
+                clone_abnorms = clone_abnorms + all_clone_abnorms[i-1]
+                sl_dict[i-1] = all_clone_abnorms[i-1]
+        removed = set()
+        
+        for a in clone_abnorms:
+            if re.fullmatch('(\d\d([~-]\d\d)?|[XY][XY]?|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?', a):
+                removed.add(a)
+        
+        clone_abnorms = [ab for ab in clone_abnorms if ab not in removed]
+        for ab in clone_abnorms:
+            abnorm_set.add(ab)
+        all_clone_abnorms.append(clone_abnorms)
+    
+    
+    abnorm_count = pd.DataFrame(index = clones, columns = abnorm_set)
+    for clone, abnorm_l in zip(clones, all_clone_abnorms):
+        for unique_abn in abnorm_set:
+            abnorm_count.loc[clone, unique_abn] = abnorm_l.count(unique_abn)
+    
+    final_abn_count = abnorm_count.max(axis=0)
+    abnorms = []
+    for abn, count in final_abn_count.items():
+        abnorms = abnorms + [abn] * count
+    
+    
+    
+    verbose_dict = {}
+    
+    col_true = set()
+    mono = 0
+    poly = 0
+    struc = 0
+    der = 0
+    mar = 0
+    seventeen_p = False
+    for a in abnorms:
+        if verbose:
+            verbose_dict[a] = [f'abnormality count = {final_abn_count[a]}']
+        #removing normal report segments
+        if re.fullmatch('(\d\d([~-]\d\d)?|[XY][XY]?|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?', a):
+            removed.add(a)
+            if verbose:
+                if a.endswith(']'):
+                    del verbose_dict[a]
+                else:
+                    verbose_dict[a] = 'Normal'
+#         if re.search('mar', a): #no longer the case to remove mar
+#             removed.add(a)
+
+        #checking abnormalities
+        if a not in removed:
+            
+            #checking multi-translocations
+            if re.search('t\(\d\d?;\d\d?;\d\d?',a):
+                trans_dict = make_multi_translocation_dict(a)
+                if verbose:
+                    col_true, verbose_list = \
+                        check_trans_dict(trans_dict, col_true,prop_dict,
+                                         verbose=True)
+                    for v in verbose_list:
+                        verbose_dict[a].append(v)
+                else:
+                    col_true = check_trans_dict(trans_dict, col_true)
+
+            #checking two-part translocations
+            if re.search('t\(([XY\d]{1,2});([XY\d]{1,2})\)\(([pq])\d*(\.\d+)?;([pq])\d*(\.\d+)?\)',
+                         a):
+                if verbose:
+                    col_true, verbose_list = two_part_translocation_check(a,
+                        col_true, prop_dict, verbose=True)
+                    for v in verbose_list:
+                        verbose_dict[a].append(v)
+                else:
+                    col_true = two_part_translocation_check(a,
+                                col_true, prop_dict, verbose-False)
+                
+            
+            #counting number of markers present
+            if re.search('mar', a):
+                mar_plural = re.search('\+(\d)',a)
+                if mar_plural:
+                    mar += int(mar_plural.groups()[0]) - 1
+                    if verbose:
+                        verbose_dict[a].append(f'markers_added: {int(mar_plural.groups()[0])}')
+                else:
+                    #mar += 1 #no longer double counting markers
+                    if verbose:
+                        verbose_dict[a].append('markers_added: 1')
+            
+            #detecting presence on monosomies
+            if re.fullmatch('-\d+|-[XY]', a):
+                mono += 1
+                if verbose:
+                    verbose_dict[a].append('monosomy count + 1')
+                #detecting number of structular changes
+                 #if re.search('[inv|t].*\).*\)', a): # old definition
+
+
+            #detecting presence of polysomies
+            if re.fullmatch('\+\d+|\+[XY]', a):
+                poly += 1
+                if verbose:
+                    verbose_dict[a].append('polysomy count + 1')
+
+            #searching for structural changes
+            if not re.fullmatch('[+\-]\d+c?|[+\-][XY]c?', a):
+                struc += 1
+                if verbose:
+                    verbose_dict[a].append('Structural count + 1')
+            
+            if re.search('der', a):
+                der += 1
+                if verbose:
+                    verbose_dict[a].append('der count + 1')
+            
+            #working out if any abnormalities are to do with 17p
+            if re.search('17.*p|-17',a):
+                m = re.search('\d\d?;\d\d?', a)
+                if m:
+                    split = re.split(';', m.group())
+                    if re.findall('[pq]', a)[split.index('17')] == 'p':
+                        seventeen_p = True
+                        if verbose:
+                            verbose_dict[a].append('17p')
+                    else:
+                        seventeen_p = False
+                else:
+                    seventeen_p = True
+                    if verbose:
+                        verbose_dict[a].append('17p')
+            
+            #looping through pre-set properties
+            for p in prop_dict:
+                if re.search(p, a):
+                    col_true.add(p)
+                    if verbose:
+                        verbose_dict[a].append(prop_dict[p])
+                    
+    #abnormality count is equal to all non-removed + der is double counted
+    row['Number of cytogenetic abnormalities'] = len(abnorms) + der #+ mar #no longer having a mar count
+    
+    row['Monosomy'] = mono
+    row['Polysomy'] = poly
+    row['Structural'] = struc
+    row['abnormal(17p)'] = seventeen_p
+    for c in col_true:
+        row[prop_dict[c]] = True
+    if verbose:
+        row['verbose'] = verbose_dict
+    return row
+
 def parse_karyotype(row, prop_dict, verbose=False):
     '''
     Working row by row on a dataframe, detects abnormalities
@@ -303,7 +505,7 @@ def parse_karyotype(row, prop_dict, verbose=False):
             row['verbose'] = "see error description"
         return row
     
-    verbose_dict = {}
+    
 
     #preparing string before splitting to abnormalities
     full_string = row['Cytogenetics']
@@ -314,6 +516,9 @@ def parse_karyotype(row, prop_dict, verbose=False):
     #set_abnorms = set(abnorms) 
     # if change to list data structure
     # ruins functionality try converting part back to a set
+    
+    
+    verbose_dict = {}
     removed = set()
     col_true = set()
     mono = 0
@@ -325,7 +530,7 @@ def parse_karyotype(row, prop_dict, verbose=False):
     for a in abnorms:
         if verbose:
             verbose_dict[a] = []
-        #cremoving normal report segments
+        #removing normal report segments
         if re.fullmatch('(\d\d([~-]\d\d)?|[XY][XY]?|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?', a):
             removed.add(a)
             if verbose:
@@ -427,7 +632,7 @@ def parse_karyotype(row, prop_dict, verbose=False):
                     
     #abnormality count is equal to all non-removed + der is double counted + mar count
     abnorms = [ab for ab in abnorms if ab not in removed]
-    row['Number of cytogenetic abnormalities'] = len(abnorms) + der + mar #no longer having a mar count
+    row['Number of cytogenetic abnormalities'] = len(abnorms) + der #+ mar #no longer having a mar count
     
     row['Monosomy'] = mono
     row['Polysomy'] = poly
@@ -556,7 +761,7 @@ def extract_from_string(karyotype, prop_dict, bool_mode = 'string', fish = None,
         'Error': False,
         'Error description': []
     }
-    result = parse_karyotype(input, prop_dict, verbose=verbose)
+    result = parse_karyotype_clone(input, prop_dict, verbose=verbose)
     for abn in prop_dict.values():
         if abn not in result:
             result[abn] = False
@@ -643,12 +848,12 @@ if __name__ == '__main__':
      'FISH_MECOM': False
     }
     #report = "  44,X,-Y,-Y[17]/46,XY[3]   "
-    #report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
+    report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
     #report = "47,XY,+11,t(3;19)(q26.2;p13.3)[4]"
     #report = " 46,xx,t(8;16)(p11.2;p13.3)[20]"
     #report = "45,XX,t(3;21)(q26;q?11.2),del(5)(q23-31q33),-7[14]"
     #report = "46,XX,t(3;12)(q26.2;p13)[18]"
-    report = "46,XY,del(3)(p13),del(5)(q15q33),del(7)(p13p22),add(12)(p13)[3]/45,sl,dic(20;21)(q1;p1)[5]/47,sl1,+add(21)(p1),+mar[2]"
+    #report = "46,XY,del(3)(p13),del(5)(q15q33),del(7)(p13p22),add(12)(p13)[3]/45,sl,dic(20;21)(q1;p1)[5]/47,sl1,+add(21)(p1),+mar[2]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE)
     print(report)
     print(result)
