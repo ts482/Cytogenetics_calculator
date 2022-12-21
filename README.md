@@ -50,9 +50,12 @@ Test whether t(8;16)(p11.2;p13.3) is counted as t(8;16)(p11;p13)
 curl -i -H "Content-Type: application/json" -X POST -d '{"karyotype_string":"  46,xx,t(8;16)(p11.2;p13.3)[20]   ", "version": "ELN2022"}' http://localhost:5000/karyotype/extract
 ```
 
-## tests
+# tests
 Tests are written with pytest. To run all tests use
 ```
 $ pytest
 ```
 From the project root.
+
+## testing against validated results
+The test test_extractor.test_file loads an input file test_data/karyotypes.csv and checks the results of running the extractor against the inputs in the file. The format for this file is as in test_data/test_data_example.csv. The easiest way to generate this test file is to use the CLI to run the extractor first, then review the results manually, correcting any errors. 
