@@ -325,21 +325,43 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
         #initialising counts and sets for abnormalities
         clone_abnorms = list(re.split(',|\[', clone))
         
+        
+        
+        plicates = list()
+        
+        removed = set()
+        
+        idem_sl_multiplier = 1
+        for a in clone_abnorms:
+            multiplier = re.search('x(\d)$', a)
+            if multiplier:
+                if re.search('idem|sd?l\d?',a):
+                    idem_sl_multiplier = int(multiplier.group(1))
+                else:
+                    non_x_string = re.sub('x(\d)$', '', a)
+                    for i in range(int(multiplier.group(1))): 
+                        plicates.append(non_x_string)
+                    removed.add(a)
+                    
+        clone_abnorms = clone_abnorms + plicates
+                    
+                
         if re.search('idem',clone):
-            clone_abnorms = clone_abnorms + all_clone_abnorms[i-1]
+            clone_abnorms = clone_abnorms + all_clone_abnorms[0] * idem_sl_multiplier
         
         #looking for presence of sl groups
         sl_group = re.search('(sd?l\d?)', clone)
         if sl_group:
-            if sl_group in sl_dict:
-                clone_abnorms = clone_abnorms + all_clone_abnorms[sl_dict[sl_group]]
+            if sl_group.group(0) in sl_dict:
+                clone_abnorms = clone_abnorms + sl_dict[sl_group.group(0)] * idem_sl_multiplier
             else:
-                clone_abnorms = clone_abnorms + all_clone_abnorms[i-1]
-                sl_dict[i-1] = all_clone_abnorms[i-1]
-        removed = set()
+                clone_abnorms = clone_abnorms + all_clone_abnorms[i-1] * idem_sl_multiplier
+                sl_dict[sl_group.group(0)] = all_clone_abnorms[i-1]
+        
+       
         
         for a in clone_abnorms:
-            if re.fullmatch('(\d\d([~-]\d\d)?|[XY][XY]?|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?', a):
+            if re.fullmatch('(\d\d([~-]\d\d)?|[XY][XY]?|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?(x\d+)?', a):
                 removed.add(a)
         
         clone_abnorms = [ab for ab in clone_abnorms if ab not in removed]
@@ -848,12 +870,15 @@ if __name__ == '__main__':
      'FISH_MECOM': False
     }
     #report = "  44,X,-Y,-Y[17]/46,XY[3]   "
-    report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
+    #report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
     #report = "47,XY,+11,t(3;19)(q26.2;p13.3)[4]"
     #report = " 46,xx,t(8;16)(p11.2;p13.3)[20]"
     #report = "45,XX,t(3;21)(q26;q?11.2),del(5)(q23-31q33),-7[14]"
     #report = "46,XX,t(3;12)(q26.2;p13)[18]"
+    #report = "45,XX,-7[22]/46,idem,+12[3]/47,idem,+12,+20[5]"
+    #report = "47,XY,+13,i(13)(q10)x2[2]/47,XY,+13[4]/46,XY[8]"
     #report = "46,XY,del(3)(p13),del(5)(q15q33),del(7)(p13p22),add(12)(p13)[3]/45,sl,dic(20;21)(q1;p1)[5]/47,sl1,+add(21)(p1),+mar[2]"
+    report = "46,XY,t(12;20)(q15;q11.2)[6]/47,sl,+13[2]/94,sdl1x2[2]/93,sdl2,dic(5;6)(q1?1.2;q12~13)[3]/95,sdl2,+15[2]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE)
     print(report)
     print(result)
