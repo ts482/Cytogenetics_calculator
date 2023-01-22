@@ -145,6 +145,9 @@ def gram_error(string, verbose=False):
     if re.search('[^a-z]?c[^p]', string) or re.search('[^a-z]c$', string):
         warning.append('constitutional changes present')
         
+    if re.search('<\dn>', string):
+        warning.append('polyploidy present')
+        
     #incorrectly counts abnormalities if split character are together
     if re.search('[/,[]{2}', string):
         error.append('The following symbols must not be next to another or themselves: / , [')
@@ -171,8 +174,11 @@ def gram_error(string, verbose=False):
         except ValueError:
             error.append('Part of report missing comma')
             continue
-        if not re.search('idem|sd?l', s):
+        if not re.search('(idem)|(sd?l)', s):
             expected = 46
+        else:
+            if re.search('(idem)|(sd?l\d?)x\d', s):
+                warning.append('stemline duplication present, results should be taken with caution')
         expected -= len(re.findall('\-', s))
         expected += len(re.findall('\+', s))
         if re.search('mar', s):
@@ -194,6 +200,12 @@ def gram_error(string, verbose=False):
             except ValueError:
                 error.append('Part of report not clearly defined by two chromosome numbers followed by comma (e.g. "43~45,")')
                 continue
+            
+            if high_num > 64:
+                warning.append(f'high chromosome number detected indicating polyploidy: {high_num}.')
+            elif high_num > 49:
+                warning.append(f' high chromosome number detected indicating hyperploidy: {high_num}')
+        
             if verbose:
                 chr_count['Reported number'] = str(low_num) + '~' + str(high_num)
             if low_num <= expected <= high_num:
@@ -207,6 +219,10 @@ def gram_error(string, verbose=False):
         else:
             try:
                 num = int(chrom[:2])
+                if num > 64:
+                    warning.append(f'high chromosome number detected indicating polyploidy: {num}.')
+                elif num > 49:
+                    warning.append(f' high chromosome number detected indicating hyperploidy: {num}')
             except ValueError:
                 error.append('Start of report missing clear chromosome number followed by comma (e.g. "46,")')
                 continue
@@ -365,15 +381,35 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                 removed.add(a)
         
         clone_abnorms = [ab for ab in clone_abnorms if ab not in removed]
+        
+        #finding out abnormalities which cancel out
+        for i, ab in enumerate(clone_abnorms):
+            somy = re.search('(^[+-])(.*)', ab)
+            if somy:
+                if somy.group(1) == '+':
+                    for ab2 in clone_abnorms:
+                        if ab2 == '-' + somy.group(2):
+                            clone_abnorms.remove(ab)
+                            clone_abnorms.remove(ab2)
+                            break
+                elif somy.group(1) == '-':
+                    for ab2 in clone_abnorms:
+                        if ab2 in [somy.group(2),'+' + somy.group(2)]:
+                            clone_abnorms.remove(ab)
+                            clone_abnorms.remove(ab2)
+                            break
+
         for ab in clone_abnorms:
             abnorm_set.add(ab)
         all_clone_abnorms.append(clone_abnorms)
     
     
-    abnorm_count = pd.DataFrame(index = clones, columns = abnorm_set)
+    abnorm_list = list(abnorm_set)
+    abnorm_count = pd.DataFrame(index = clones, columns = abnorm_list)
     for clone, abnorm_l in zip(clones, all_clone_abnorms):
         for unique_abn in abnorm_set:
             abnorm_count.loc[clone, unique_abn] = abnorm_l.count(unique_abn)
+        
     
     final_abn_count = abnorm_count.max(axis=0)
     abnorms = []
@@ -495,7 +531,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                         verbose_dict[a].append(prop_dict[p])
                     
     #abnormality count is equal to all non-removed + der is double counted
-    row['Number of cytogenetic abnormalities'] = len(abnorms) + der #+ mar #no longer having a mar count
+    row['Number of cytogenetic abnormalities'] = len(abnorms) + der + mar
     
     row['Monosomy'] = mono
     row['Polysomy'] = poly
@@ -507,6 +543,8 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
         row['verbose'] = verbose_dict
     return row
 
+
+#legacy function
 def parse_karyotype(row, prop_dict, verbose=False):
     '''
     Working row by row on a dataframe, detects abnormalities
@@ -878,7 +916,8 @@ if __name__ == '__main__':
     #report = "45,XX,-7[22]/46,idem,+12[3]/47,idem,+12,+20[5]"
     #report = "47,XY,+13,i(13)(q10)x2[2]/47,XY,+13[4]/46,XY[8]"
     #report = "46,XY,del(3)(p13),del(5)(q15q33),del(7)(p13p22),add(12)(p13)[3]/45,sl,dic(20;21)(q1;p1)[5]/47,sl1,+add(21)(p1),+mar[2]"
-    report = "46,XY,t(12;20)(q15;q11.2)[6]/47,sl,+13[2]/94,sdl1x2[2]/93,sdl2,dic(5;6)(q1?1.2;q12~13)[3]/95,sdl2,+15[2]"
+    #report = "46,XY,t(12;20)(q15;q11.2)[6]/47,sl,+13[2]/94,sdl1x2[2]/93,sdl2,dic(5;6)(q1?1.2;q12~13)[3]/95,sdl2,+15[2]"
+    report = "46,XX,t(12;20),-7,+mar[10]/92,slx2,-t(12;20),-mar[10]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE)
     print(report)
     print(result)
