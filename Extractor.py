@@ -24,7 +24,7 @@ def load_file(file):
     '''
 
     karyotypes = pd.read_csv(file)    
-    karyotypes = karyotypes.drop(columns='ID')
+    #karyotypes = karyotypes.drop(columns='ID')
     
     return karyotypes
 
@@ -807,7 +807,7 @@ def only_positive_results(result_dict):
 
 
 def extract_from_string(karyotype, prop_dict, bool_mode = 'string', fish = None,
-                        verbose=False):
+                        verbose=False, only_positive=False):
     """
     Run extraction on a single karyotype string, extraction based on prop_dict
     prop_dict can be created with setup()
@@ -816,12 +816,12 @@ def extract_from_string(karyotype, prop_dict, bool_mode = 'string', fish = None,
     Anything in prop_dict that is not detected will default to False
     bool_mode: return type for boolean values. If 'string' then True -> "True" and Talse -> "False", otherwise return bool. 
     """
-    input = {
+    input_dict = {
         'Cytogenetics': re.sub('\s', '',karyotype),
         'Error': False,
         'Error description': []
     }
-    result = parse_karyotype_clone(input, prop_dict, verbose=verbose)
+    result = parse_karyotype_clone(input_dict, prop_dict, verbose=verbose)
     for abn in prop_dict.values():
         if abn not in result:
             result[abn] = False
@@ -838,10 +838,13 @@ def extract_from_string(karyotype, prop_dict, bool_mode = 'string', fish = None,
                 continue
             if type(result[abn]) == bool:
                 result[abn] = str(result[abn])
+    if only_positive:
+        result = only_positive_results(result)
+    
     output = {'error': result['Error'],
               'error_message': result['Error description'],
               'Warnings': result['Warnings'],
-              'result': only_positive_results(result),
+              'result': result,
               'fish_available':False}
     
     if fish:
@@ -907,18 +910,21 @@ if __name__ == '__main__':
      'FISH_MLL': False,
      'FISH_MECOM': False
     }
+    fish_results=None
     #report = "  44,X,-Y,-Y[17]/46,XY[3]   "
     #report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
     #report = "47,XY,+11,t(3;19)(q26.2;p13.3)[4]"
     #report = " 46,xx,t(8;16)(p11.2;p13.3)[20]"
     #report = "45,XX,t(3;21)(q26;q?11.2),del(5)(q23-31q33),-7[14]"
     #report = "46,XX,t(3;12)(q26.2;p13)[18]"
+    report = "46,XY,inv(16)(p13.1q22)[2]/47,sl,del(6)(q13q23),+22[6]/48,sdl1,+13[4]/46,XY[4]"
     #report = "45,XX,-7[22]/46,idem,+12[3]/47,idem,+12,+20[5]"
     #report = "47,XY,+13,i(13)(q10)x2[2]/47,XY,+13[4]/46,XY[8]"
     #report = "46,XY,del(3)(p13),del(5)(q15q33),del(7)(p13p22),add(12)(p13)[3]/45,sl,dic(20;21)(q1;p1)[5]/47,sl1,+add(21)(p1),+mar[2]"
     #report = "46,XY,t(12;20)(q15;q11.2)[6]/47,sl,+13[2]/94,sdl1x2[2]/93,sdl2,dic(5;6)(q1?1.2;q12~13)[3]/95,sdl2,+15[2]"
-    report = "46,XX,t(12;20),-7,+mar[10]/92,slx2,-t(12;20),-mar[10]"
-    result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE)
+    #report = "46,XX,t(12;20),-7,+mar[10]/92,slx2,-t(12;20),-mar[10]"
+    result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE,
+                                 only_positive= True)
     print(report)
     print(result)
     #print(props)
