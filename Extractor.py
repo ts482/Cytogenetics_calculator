@@ -28,6 +28,47 @@ def load_file(file):
     
     return karyotypes
 
+def dotreplace(matchobj):
+    '''
+    helper function for re.sub
+    replaces chromosome decimals (e.g. "17p14(.2)"), with a string that makes
+    these decimal points optional, and accepts +/- .1 of the chromosome
+    '''
+    int_match = int(matchobj.group(2))
+    first_num = int_match-1
+    second_num = int_match+1
+    first_num, second_num = str(first_num), str(second_num)
+    return f'{matchobj.group(1)}(?:\.[{first_num}-{second_num}])?'
+
+
+def substitute_v(t):
+    der = re.search('der\(([0-9XxYy]{1,2})\)t', t)
+    if der:
+        der_chrom = der.group(1)
+    m = re.search('v;([0-9XxYy]{1,2})([qp](?:\d{0,2})?(?:\.\d)?)?', t)
+    if not m:
+        m = re.search('([0-9XxYy]{1,2})([qp](?:\d{0,2})?(?:\.\d)?)?;v', t)
+    chrom = m.group(1)
+    arm = m.group(2)
+    if arm:
+        armdot = re.search('\.(\d)', arm)
+        if armdot:
+            dotnum = armdot.group(1)
+            first_num = str(int(dotnum)-1)
+            second_num = str(int(dotnum)+1)
+            arm = re.sub('\.\d+', f'(?:\.[{first_num}-{second_num}])?', arm)
+        if der:
+            return f'(der\({der_chrom}\)' + \
+                f't\((?:[0-9XxYy]){1,2};{chrom}\)\([qp]\d{1,2}(?:\.\d)?;{arm}\))' + \
+                f'|(der\({der_chrom}\)' + \
+                f't\({chrom};(?:[0-9XxYy]){1,2}\)\({arm}:[qp]\d{1,2}(?:\.\d)?\))'
+        return f'(t\((?:[0-9XxYy]){1,2};{chrom}\)\([qp]\d{1,2}(?:\.\d)?;{arm}\))' + \
+            f'|(t\({chrom};(?:[0-9XxYy]){1,2}\)\({arm}:[qp]\d{1,2}(?:\.\d)?\))'
+    if der:
+        return f'(der\({der_chrom}\)t\((?:[0-9XxYy]){1,2};{chrom}\))' + \
+            '|(der\({der_chrom}\)t\({chrom};(?:[0-9XxYy]){1,2}\))'
+    return f'(t\((?:[0-9XxYy]){1,2};{chrom}\))|(t\({chrom};(?:[0-9XxYy]){1,2}\))'
+
 def properties_dict(karyotypes, properties = None):
     '''
     1. Transforms column names in input file into relevant 
@@ -56,33 +97,48 @@ def properties_dict(karyotypes, properties = None):
         if v.startswith('Monosomy'):
             v = '-' + v[8:]
         
-        #
-        matches = re.finditer('(\d+)(p|q)',v)
-        for m in matches:
-            #different rule for translocations - removing first bracket
-            if re.search('t\(', m.string):
-                f = v[:m.start()] + m.group()[:-1] + \
-                    ')(' + m.group()[-1]+ v[m.end():]
-            else:
-                f = v[:m.start()] + '(' + m.group()[:-1] + \
-                    ')(' + m.group()[-1]+ v[m.end():]
-            v=f
+        #formatting trisomies
+        if v.startswith('Trisomy'):
+            v = '+' + v[7:]
+        
+        #replacing all chromosome dots with contingent verisions which are +/- .1
         
         
-            
-        #creating escape characters for strings
-        v = re.escape(v)
+        if not re.search('\(v;|;v\)', v):
+            #correctly formatting translocations by seperating p and q
+            matches = re.finditer('([0-9XxYy]{1,2})(p|q)',v)
+            for m in matches:
+                #different rule for translocations - removing first bracket
+                if re.search('t\(', m.string):
+                    f = v[:m.start()] + m.group()[:-1] + \
+                        ')(' + m.group()[-1]+ v[m.end():]
+                else:
+                    f = v[:m.start()] + '(' + m.group()[:-1] + \
+                        ')(' + m.group()[-1]+ v[m.end():]        
+                v=f
+        
+        
+        
+            #creating escape characters for strings
+            v = re.escape(v)
+        
+            if re.search('[pq]\d{1,2}\\\.\d',v):
+                v = re.sub('([pq]\d{1,2})\\\.(\d)', dotreplace, v)
+                
+        else:
+            v = substitute_v(v)
         
         #special case for dots
-        if v == "t\(8;16\)\(p11;p13\)":
-            v = "t\(8;16\)\(p11\.?\d?;p13\.?\d?\)"
+        #if v == "t\(8;16\)\(p11;p13\)":
+        #    v = "t\(8;16\)\(p11\.?\d?;p13\.?\d?\)"
         
         #creating special case for for t(v;11)
-        if v == 't\\(v;11\\)':
-            v = '(t\\(\d+;11\\))|(t\\(11;\d+\\))'
+        #if v == 't\\(v;11\\)':
+        #    v = '(t\\((?:[0-9XxYy]+);11\\))|(t\\(11;(?:[0-9XxYy]+)\\))'
+            
         #another special case for t(3q26.2;v)
-        if v == 't\\(3\\)\\(q26\\.2;v\\)':
-            v = '(t\(\d+;3\)\([pq]\d+(\.\d+)?;q26(\.2)?\))|(t\(3;\d+\)\(q26(\.2)?;[pq]\d+(\.\d+)?\))'
+        #if v == 't\\(3\\)\\(q26\\.2;v\\)':
+        #    v = '(t\((?:[0-9XxYy]+);3\)\([pq]\d+(\.\d+)?;q26(\.2)?\))|(t\(3;(?:[0-9XxYy]+)\)\(q26(\.2)?;[pq]\d+(\.\d+)?\))'
 
         
         d[k] = v
@@ -236,6 +292,31 @@ def gram_error(string, verbose=False):
                 warning.append(f'chromosome number lower than expected in subsection number {i+1}')
     return error, warning, chr_count
 
+def base_translocation_check(translocation, col_true, prop_dict,
+                             verbose=False):
+    '''
+    
+
+    Parameters
+    ----------
+    translocation : string
+        
+    col_true : dict
+        DESCRIPTION.
+    prop_dict : dict
+        DESCRIPTION.
+    verbose : bool, optional
+        DESCRIPTION. The default is False.
+
+    Returns
+    -------
+    None.
+
+    '''
+    
+    
+    
+    
 def make_multi_translocation_dict(string):
     '''
     Creates a translocation list if only full chromosomes are involved
@@ -243,7 +324,7 @@ def make_multi_translocation_dict(string):
     '''
     
     #finding out how many chromosomes in translocation
-    exp = '(\d\d?);(\d\d?)'
+    exp = '([0-9XxYy]{1,2});([0-9XxYy]{1,2})'
     while re.search(exp, string):
         chr_groups = list(re.search(exp, string).groups())
         exp = exp + ';(\d\d?)'
@@ -445,7 +526,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
         if a not in removed:
             
             #checking multi-translocations
-            if re.search('t\(\d\d?;\d\d?;\d\d?',a):
+            if re.search('t\([0-9XxYy]{1,2};[0-9XxYy]\d?;[0-9XxYy]\d?',a):
                 trans_dict = make_multi_translocation_dict(a)
                 if verbose:
                     col_true, verbose_list = \
@@ -482,7 +563,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                         verbose_dict[a].append('markers_added: 1')
             
             #detecting presence on monosomies
-            if re.fullmatch('-\d+|-[XxYy]', a):
+            if re.fullmatch('-[0-9XxYy]{1,2}', a):
                 mono += 1
                 if verbose:
                     verbose_dict[a].append('monosomy count + 1')
@@ -491,13 +572,13 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
 
 
             #detecting presence of polysomies
-            if re.fullmatch('\+\d+|\+[XxYy]', a):
+            if re.fullmatch('\+[0-9XxYy]{1,2}', a):
                 poly += 1
                 if verbose:
                     verbose_dict[a].append('polysomy count + 1')
 
             #searching for structural changes
-            if not re.fullmatch('[+\-]\d+c?|[+\-][XxYy]c?', a):
+            if not re.fullmatch('[+\-][0-9XxYy]{1,2}c?', a):
                 struc += 1
                 if verbose:
                     verbose_dict[a].append('Structural count + 1')
@@ -509,7 +590,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
             
             #working out if any abnormalities are to do with 17p
             if re.search('17.*p|-17',a):
-                m = re.search('\d\d?;\d\d?', a)
+                m = re.search('[0-9XxYy]{1,2}?;[0-9XxYy]{1,2}?', a)
                 if m:
                     split = re.split(';', m.group())
                     if re.findall('[pq]', a)[split.index('17')] == 'p':
@@ -709,14 +790,55 @@ def base_extraction():
 
 def extraction_2022():
     # additionally checks for 't(8;16)(p11;p13)', 't(3q26.2;v)'
-    ex = ["-Y", "-X", 'del11q', 'del12p', 
-    'del13q', 'del5q', 'del7q', 'idic(X)(q13)', 'isochromosome17q', 'Monosomy13', 
-    'Monosomy17', 'Monosomy5', 'Monosomy7', 't(1;3)', 't(11;16)(q23.3;p13.3)', 
-    't(12p)', 't(17p)', 't(2;11)', 't(3;21)', 't(3;5)', 't(5;10)', 't(5;12)', 
-    't(5;17)', 't(5;7)', 't(5q)', 't(1;22)', 'inv(3)', 't(3;3)', 't(6;9)', 
-    't(9;22)', 't(16;16)', 'inv(16)', 't(8;21)', 't(15;17)', 't(9;11)', 
-    't(6;11)', 't(10;11)', 't(8;16)(p11;p13)', 't(3q26.2;v)',
-          't(v;11)']
+    ex = [ # sex chromosome monosmies 
+    "-Y", "-X",
+    #deletions
+    'del5q', 'del7q', 'del11q', 'del12p', 'del13q',
+    'del(17)(q21.2q21.2)', 'del(17p)', 'del(20q)',
+    #additions
+    'add(5q)','add(7q)', 'add(12p)', 'add(17p)',
+    #inversions
+    'idic(X)(q13)', 'i(17q)', 'inv(3)(q21.3q26.2)','inv(16)(p13.1q22)',
+    'inv(16)(p13.3q24.3)',
+    #monosomies
+    'Monosomy5', 'Monosomy7', 'Monosomy13', 'Monosomy17',
+    #trisomies
+    'Trisomy8',
+    #translocations ordered by first chromosome, then second chromosome:
+    #t1
+    't(1;22)(p13.3;q13.1)',
+    #t2
+    't(2;11)(p21;q23.3)', 
+    #t3
+    't(3;3)(q21.3;q26.2)', 't(3;5)(q25.3;q35.1)', 't(3;21)(q26.2;q22.1)', 't(3q26.2;v)',
+    #t5
+    't(5;7)(q32;q11.2)', 't(5;10)(q32;q21)', 't(5;11)(q35.2;p15.4)',
+    't(5;12)(q32;p13.2)', 't(5;17)(q32;p13.2)', 't(v;5q)', 
+    #t6
+    't(6;9)(p22.3;q34.1)', 't(6;11)',
+    #t7
+    't(7;12)(q36.3;p13.2)',
+    #t8
+    't(8;16)(p11.2;p13.3)', 't(8;21)(q22:q22.1)',
+    #t9
+    't(9;11)(p21.3;q23.3)', 't(9;22)(q34.1;q11.2)',
+    #t10
+    't(10;11)(p12.3;q14.2)',
+    #t11
+    't(11;12)(p15.4;p13.3)', 't(11;16)(q23.3;p13.3)', 't(v;11)',
+    't(v;11p15.4)', 't(v;11q23.3)',
+    #t12
+    't(v;12p)',
+    #t15
+    't(15;17)(q24.1;q21.2)',
+    #t16
+    't(16;16)(p13.1;q22)', 't(16;21)(q24.3;q22.1)', 't(16;21)(p11.2;q22.2)',
+    #t17
+    't(v;17p)', 't(v;17q21.2)',
+    #der translocations
+    'der(5)t(v;5q)', 'der(7)t(v;7q)',
+    'der(12)t(v;12p)', 'der(17)t(v;17p)',
+    ]
     return ex
 
 def available_configs():
@@ -757,13 +879,14 @@ if __name__ == '__main__':
     #report = "47,XY,+11,t(3;19)(q26.2;p13.3)[4]"
     #report = " 46,xx,t(8;16)(p11.2;p13.3)[20]"
     #report = "45,XX,t(3;21)(q26;q?11.2),del(5)(q23-31q33),-7[14]"
-    #report = "46,XX,t(3;12)(q26.2;p13)[18]"
-    report = "46,XY,inv(16)(p13.1q22)[2]/47,sl,del(6)(q13q23),+22[6]/48,sdl1,+13[4]/46,XY[4]"
+    report = "46,XX,t(3;12)(q26.2;p13)[18]"
+    #report = "46,XY,inv(16)(p13.1q22)[2]/47,sl,del(6)(q13q23),+22[6]/48,sdl1,+13[4]/46,XY[4]"
     #report = "45,XX,-7[22]/46,idem,+12[3]/47,idem,+12,+20[5]"
     #report = "47,XY,+13,i(13)(q10)x2[2]/47,XY,+13[4]/46,XY[8]"
     #report = "46,XY,del(3)(p13),del(5)(q15q33),del(7)(p13p22),add(12)(p13)[3]/45,sl,dic(20;21)(q1;p1)[5]/47,sl1,+add(21)(p1),+mar[2]"
     #report = "46,XY,t(12;20)(q15;q11.2)[6]/47,sl,+13[2]/94,sdl1x2[2]/93,sdl2,dic(5;6)(q1?1.2;q12~13)[3]/95,sdl2,+15[2]"
     #report = "46,XX,t(12;20),-7,+mar[10]/92,slx2,-t(12;20),-mar[10]"
+    #report = "46,XX,t(3;3)(q21.3;q26.2)[20]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE,
                                  only_positive= True)
     print(report)
