@@ -42,6 +42,7 @@ def dotreplace(matchobj):
 
 
 def substitute_v(t):
+    #important to note f curly braces and regex curly braces
     der = re.search('der\(([0-9XxYy]{1,2})\)t', t)
     if der:
         der_chrom = der.group(1)
@@ -58,16 +59,19 @@ def substitute_v(t):
             second_num = str(int(dotnum)+1)
             arm = re.sub('\.\d+', f'(?:\.[{first_num}-{second_num}])?', arm)
         if der:
-            return f'(der\({der_chrom}\)' + \
-                f't\((?:[0-9XxYy]){1,2};{chrom}\)\([qp]\d{1,2}(?:\.\d)?;{arm}\))' + \
-                f'|(der\({der_chrom}\)' + \
-                f't\({chrom};(?:[0-9XxYy]){1,2}\)\({arm}:[qp]\d{1,2}(?:\.\d)?\))'
-        return f'(t\((?:[0-9XxYy]){1,2};{chrom}\)\([qp]\d{1,2}(?:\.\d)?;{arm}\))' + \
-            f'|(t\({chrom};(?:[0-9XxYy]){1,2}\)\({arm}:[qp]\d{1,2}(?:\.\d)?\))'
+            return f'(der\({der_chrom}\)' + 't\((?:[0-9XxYy]){1,2};' + \
+                f'{chrom}\)' + '\([qp]\d{1,2}(?:\.\d)?;' + f'{arm}\))' + \
+                f'|(der\({der_chrom}\)t\({chrom};' + '(?:[0-9XxYy]){1,2}\)' + \
+                f'\({arm};' + '[qp]\d{1,2}(?:\.\d)?\))'
+        return 't\((?:[0-9XxYy]{1,2});' + f'{chrom}\)' + \
+            '\([qp]\d{1,2}(?:\.\d)?;' + f'{arm}\)' + \
+            f'|t\({chrom};' + '(?:[0-9XxYy]){1,2}\)'+ f'\({arm};' + \
+                '[qp]\d{1,2}(?:\.\d)?\)'
     if der:
-        return f'(der\({der_chrom}\)t\((?:[0-9XxYy]){1,2};{chrom}\))' + \
-            '|(der\({der_chrom}\)t\({chrom};(?:[0-9XxYy]){1,2}\))'
-    return f'(t\((?:[0-9XxYy]){1,2};{chrom}\))|(t\({chrom};(?:[0-9XxYy]){1,2}\))'
+        return f'(der\({der_chrom}\)' + 't\((?:[0-9XxYy]){1,2};' + \
+            f'{chrom}\))|(der\({der_chrom}\)t\({chrom};' + '(?:[0-9XxYy]){1,2}\))'
+    return '(t\((?:[0-9XxYy]){1,2};' + f'{chrom}\))|(t\({chrom};' + \
+        '(?:[0-9XxYy]){1,2}\))'
 
 def properties_dict(karyotypes, properties = None):
     '''
@@ -879,14 +883,14 @@ if __name__ == '__main__':
     #report = "47,XY,+11,t(3;19)(q26.2;p13.3)[4]"
     #report = " 46,xx,t(8;16)(p11.2;p13.3)[20]"
     #report = "45,XX,t(3;21)(q26;q?11.2),del(5)(q23-31q33),-7[14]"
-    report = "46,XX,t(3;12)(q26.2;p13)[18]"
+    #report = "46,XX,t(3;12)(q26.2;p13)[18]"
     #report = "46,XY,inv(16)(p13.1q22)[2]/47,sl,del(6)(q13q23),+22[6]/48,sdl1,+13[4]/46,XY[4]"
     #report = "45,XX,-7[22]/46,idem,+12[3]/47,idem,+12,+20[5]"
     #report = "47,XY,+13,i(13)(q10)x2[2]/47,XY,+13[4]/46,XY[8]"
     #report = "46,XY,del(3)(p13),del(5)(q15q33),del(7)(p13p22),add(12)(p13)[3]/45,sl,dic(20;21)(q1;p1)[5]/47,sl1,+add(21)(p1),+mar[2]"
     #report = "46,XY,t(12;20)(q15;q11.2)[6]/47,sl,+13[2]/94,sdl1x2[2]/93,sdl2,dic(5;6)(q1?1.2;q12~13)[3]/95,sdl2,+15[2]"
     #report = "46,XX,t(12;20),-7,+mar[10]/92,slx2,-t(12;20),-mar[10]"
-    #report = "46,XX,t(3;3)(q21.3;q26.2)[20]"
+    report = "46,XX,t(3;3)(q21.4;q26)[20]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE,
                                  only_positive= True)
     print(report)
