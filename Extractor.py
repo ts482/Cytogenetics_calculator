@@ -46,18 +46,23 @@ def substitute_v(t):
     der = re.search('der\(([0-9XxYy]{1,2})\)t', t)
     if der:
         der_chrom = der.group(1)
-    m = re.search('v;([0-9XxYy]{1,2})([qp](?:\d{0,2})?(?:\.\d)?)?', t)
+    m = re.search('v;([0-9XxYy]{1,2})([qp]\d{0,2}(?:\.\d)?)?', t)
     if not m:
-        m = re.search('([0-9XxYy]{1,2})([qp](?:\d{0,2})?(?:\.\d)?)?;v', t)
+        m = re.search('([0-9XxYy]{1,2})([qp]\d{0,2}(?:\.\d)?)?;v', t)
     chrom = m.group(1)
     arm = m.group(2)
     if arm:
         armdot = re.search('\.(\d)', arm)
+        armnum = re.search('[qp]\d{1,2}', arm)
         if armdot:
             dotnum = armdot.group(1)
             first_num = str(int(dotnum)-1)
             second_num = str(int(dotnum)+1)
             arm = re.sub('\.\d+', f'(?:\.[{first_num}-{second_num}])?', arm)
+        elif armnum:
+            arm = arm + '(?:\.\d)?'
+        elif not armnum:
+            arm = arm + '(?:\d{1,2})?(?:\.\d)?'
         if der:
             return f'(der\({der_chrom}\)' + 't\((?:[0-9XxYy]){1,2};' + \
                 f'{chrom}\)' + '\([qp]\d{1,2}(?:\.\d)?;' + f'{arm}\))' + \
@@ -109,26 +114,35 @@ def properties_dict(karyotypes, properties = None):
         
         
         if not re.search('\(v;|;v\)', v):
-            #correctly formatting translocations by seperating p and q
-            matches = re.finditer('([0-9XxYy]{1,2})(p|q)',v)
-            for m in matches:
-                #different rule for translocations - removing first bracket
-                if re.search('t\(', m.string):
-                    f = v[:m.start()] + m.group()[:-1] + \
-                        ')(' + m.group()[-1]+ v[m.end():]
-                else:
-                    f = v[:m.start()] + '(' + m.group()[:-1] + \
-                        ')(' + m.group()[-1]+ v[m.end():]        
-                v=f
+            if not re.search('inv',v):
+                #correctly formatting translocations by seperating p and q
+                matches = re.finditer('([0-9XxYy]{1,2})(p|q)',v)
+                for m in matches:
+                    #different rule for translocations - removing first bracket
+                    if re.search('(?:i|t|inv|del|add)\(', m.string):
+                        f = v[:m.start()] + m.group()[:-1] + \
+                            ')(' + m.group()[-1]+ v[m.end():]
+                    else:
+                        f = v[:m.start()] + '(' + m.group()[:-1] + \
+                            ')(' + m.group()[-1]+ v[m.end():]        
+                    v=f
         
         
         
             #creating escape characters for strings
             v = re.escape(v)
-        
+            
+            #formatting exception for deletions and additions
+            if re.search('add|del|i', v):
+                v = re.sub('\\\\\)\\\\\(', '(?:\)\()?', v)
+                v = re.sub('\\\\\)$', '', v)
+            
+            #replacing dots with less specific versions
             if re.search('[pq]\d{1,2}\\\.\d',v):
                 v = re.sub('([pq]\d{1,2})\\\.(\d)', dotreplace, v)
                 
+                
+            
         else:
             v = substitute_v(v)
         
@@ -202,7 +216,7 @@ def gram_error(string, verbose=False):
         warning.appened('"YX" appears to be wrong way round. Did you mean "XY"?')
         
     #checking for constitutional changes
-    if re.search('[^a-z]?c[^p]', string) or re.search('[^a-z]c$', string):
+    if re.search('[^a-z]c[^p]', string) or re.search('[^a-z]c$', string):
         warning.append('constitutional changes present')
         
     if re.search('<\dn>', string):
@@ -294,6 +308,13 @@ def gram_error(string, verbose=False):
                 warning.append(f'chromosome number higher than expected in subsection number {i+1}')
             else:
                 warning.append(f'chromosome number lower than expected in subsection number {i+1}')
+        #checking for composite clones
+        if len(warning)>0:
+            if re.search('chromosome', warning[-1]):
+                if re.search('cp', string):
+                    cp_cr = warning.pop()
+                    cp_cr = cp_cr + ', but note this is a composite clone'
+                    warning.append(cp_cr)
     return error, warning, chr_count
 
 def base_translocation_check(translocation, col_true, prop_dict,
@@ -511,7 +532,6 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     struc = 0
     der = 0
     mar = 0
-    seventeen_p = False
     for a in abnorms:
         if verbose:
             verbose_dict[a] = [f'abnormality count = {final_abn_count[a]}']
@@ -558,11 +578,11 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
             if re.search('mar', a):
                 mar_plural = re.search('\+(\d)',a)
                 if mar_plural:
-                    mar += int(mar_plural.groups()[0]) - 1
+                    mar += int(mar_plural.groups()[0])
                     if verbose:
                         verbose_dict[a].append(f'markers_added: {int(mar_plural.groups()[0])}')
                 else:
-                    #mar += 1 #no longer double counting markers
+                    mar += 1
                     if verbose:
                         verbose_dict[a].append('markers_added: 1')
             
@@ -583,9 +603,11 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
 
             #searching for structural changes
             if not re.fullmatch('[+\-][0-9XxYy]{1,2}c?', a):
-                struc += 1
-                if verbose:
-                    verbose_dict[a].append('Structural count + 1')
+                #markers are also structural but counted elsewhere, higher in the code
+                if not re.search('mar', a):
+                    struc += 1
+                    if verbose:
+                        verbose_dict[a].append('Structural count + 1')
             
             if re.search('der', a):
                 der += 1
@@ -593,20 +615,20 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                     verbose_dict[a].append('der count + 1')
             
             #working out if any abnormalities are to do with 17p
-            if re.search('17.*p|-17',a):
-                m = re.search('[0-9XxYy]{1,2}?;[0-9XxYy]{1,2}?', a)
-                if m:
-                    split = re.split(';', m.group())
-                    if re.findall('[pq]', a)[split.index('17')] == 'p':
-                        seventeen_p = True
-                        if verbose:
-                            verbose_dict[a].append('17p')
-                    else:
-                        seventeen_p = False
-                else:
-                    seventeen_p = True
-                    if verbose:
-                        verbose_dict[a].append('17p')
+#            if re.search('17.*p|-17',a):
+#                m = re.search('[0-9XxYy]{1,2}?;[0-9XxYy]{1,2}?', a)
+#                if m:
+#                    split = re.split(';', m.group())
+#                    if re.findall('[pq]', a)[split.index('17')] == 'p':
+#                        seventeen_p = True
+#                        if verbose:
+#                            verbose_dict[a].append('17p')
+#                    else:
+#                        seventeen_p = False
+#                else:
+#                    seventeen_p = True
+#                    if verbose:
+#                        verbose_dict[a].append('17p')
             
             #looping through pre-set properties
             for p in prop_dict:
@@ -620,8 +642,8 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     
     row['Monosomy'] = mono
     row['Polysomy'] = poly
-    row['Structural'] = struc
-    row['abnormal(17p)'] = seventeen_p
+    row['Structural'] = struc + mar
+    #row['abnormal(17p)'] = seventeen_p
     for c in col_true:
         row[prop_dict[c]] = True
     if verbose:
@@ -829,7 +851,7 @@ def extraction_2022():
     #t10
     't(10;11)(p12.3;q14.2)',
     #t11
-    't(11;12)(p15.4;p13.3)', 't(11;16)(q23.3;p13.3)', 't(v;11)',
+    't(11;12)(p15.4;p13.3)', 't(11;16)(q23.3;p13.3)',
     't(v;11p15.4)', 't(v;11q23.3)',
     #t12
     't(v;12p)',
@@ -883,14 +905,17 @@ if __name__ == '__main__':
     #report = "47,XY,+11,t(3;19)(q26.2;p13.3)[4]"
     #report = " 46,xx,t(8;16)(p11.2;p13.3)[20]"
     #report = "45,XX,t(3;21)(q26;q?11.2),del(5)(q23-31q33),-7[14]"
-    #report = "46,XX,t(3;12)(q26.2;p13)[18]"
-    #report = "46,XY,inv(16)(p13.1q22)[2]/47,sl,del(6)(q13q23),+22[6]/48,sdl1,+13[4]/46,XY[4]"
+    #report = "46,XX,t(3;17)(q26.2;p13)[18]"
+    #report = "46,XY,inv(16)(p13.2q22)[2]/47,sl,del(6)(q13q23),add(5)(q),+22[6]/48,sdl1,+13[4]/46,XY[4]"
     #report = "45,XX,-7[22]/46,idem,+12[3]/47,idem,+12,+20[5]"
     #report = "47,XY,+13,i(13)(q10)x2[2]/47,XY,+13[4]/46,XY[8]"
     #report = "46,XY,del(3)(p13),del(5)(q15q33),del(7)(p13p22),add(12)(p13)[3]/45,sl,dic(20;21)(q1;p1)[5]/47,sl1,+add(21)(p1),+mar[2]"
     #report = "46,XY,t(12;20)(q15;q11.2)[6]/47,sl,+13[2]/94,sdl1x2[2]/93,sdl2,dic(5;6)(q1?1.2;q12~13)[3]/95,sdl2,+15[2]"
     #report = "46,XX,t(12;20),-7,+mar[10]/92,slx2,-t(12;20),-mar[10]"
-    report = "46,XX,t(3;3)(q21.4;q26)[20]"
+    report = "46,XX,t(3;3)(q21.4;q26),inv(3)(q21q26)[20],inv(16)(p13q22.3)"
+    #report = "46,XY,t(5;11)(q35;p11)?c,?add(16)(q23~q24)[10]"
+    #report = "45,XX,add(1)(p11),-3,add(5)(q31),add(8)(p11),?add(9)(q34),-12,-13,-17,?add(19)(q13),-22,+4mar,inc[cp5]/46,XX[2]"
+    #report = "49,XY,der(5)t(5;6)(q23;q13),-6,i(9)(q10),+11,del(12)(p12),+19,+22,+mar[21]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE,
                                  only_positive= True)
     print(report)
