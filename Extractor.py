@@ -611,10 +611,10 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                     mar += int(mar_plural.groups()[0])
                     if verbose:
                         verbose_dict[a].append(f'markers_added: {int(mar_plural.groups()[0])}')
-                    else:
-                        mar += 1
-                        if verbose:
-                            verbose_dict[a].append('markers_added: 1')
+                else:
+                    mar += 1
+                    if verbose:
+                        verbose_dict[a].append('markers_added: 1')
             
             #working out if any abnormalities are to do with 17p
 #            if re.search('17.*p|-17',a):
