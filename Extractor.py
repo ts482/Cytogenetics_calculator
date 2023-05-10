@@ -532,6 +532,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     struc = 0
     der = 0
     mar = 0
+    er_mar = 0 #counts the erroneously cytogenetic count for markers
     for a in abnorms:
         if verbose:
             verbose_dict[a] = [f'abnormality count = {final_abn_count[a]}']
@@ -543,18 +544,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                     del verbose_dict[a]
                 else:
                     verbose_dict[a] = 'Normal'
-        #counting number of markers present
-        if re.search('mar', a):
-           removed.add(a) #mar should have own abnormality count to prevent double-counting
-           mar_plural = re.search('\+(\d)',a)
-           if mar_plural:
-               mar += int(mar_plural.groups()[0])
-               if verbose:
-                   verbose_dict[a].append(f'markers_added: {int(mar_plural.groups()[0])}')
-               else:
-                   mar += 1
-                   if verbose:
-                       verbose_dict[a].append('markers_added: 1')
+
 
         #checking abnormalities
         if a not in removed:
@@ -602,7 +592,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
             #searching for structural changes
             if not re.fullmatch('[+\-][0-9XxYy]{1,2}c?', a):
                 #markers are also structural but counted elsewhere, higher in the code
-                if not re.search('mar', a):
+                if not re.search('mar',a):
                     struc += 1
                     if verbose:
                         verbose_dict[a].append('Structural count + 1')
@@ -611,6 +601,20 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                 der += 1
                 if verbose:
                     verbose_dict[a].append('der count + 1')
+                    
+                    
+            #counting number of markers present
+            if re.search('mar', a):
+                er_mar += 1
+                mar_plural = re.search('\+(\d)',a)
+                if mar_plural:
+                    mar += int(mar_plural.groups()[0])
+                    if verbose:
+                        verbose_dict[a].append(f'markers_added: {int(mar_plural.groups()[0])}')
+                    else:
+                        mar += 1
+                        if verbose:
+                            verbose_dict[a].append('markers_added: 1')
             
             #working out if any abnormalities are to do with 17p
 #            if re.search('17.*p|-17',a):
@@ -636,7 +640,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                         verbose_dict[a].append(prop_dict[p])
                     
     #abnormality count is equal to all non-removed + der is double counted
-    row['Number of cytogenetic abnormalities'] = len(abnorms) + der + mar
+    row['Number of cytogenetic abnormalities'] = len(abnorms) + der + mar - er_mar
     
     row['Monosomy'] = mono
     row['Polysomy'] = poly
@@ -910,10 +914,10 @@ if __name__ == '__main__':
     #report = "46,XY,del(3)(p13),del(5)(q15q33),del(7)(p13p22),add(12)(p13)[3]/45,sl,dic(20;21)(q1;p1)[5]/47,sl1,+add(21)(p1),+mar[2]"
     #report = "46,XY,t(12;20)(q15;q11.2)[6]/47,sl,+13[2]/94,sdl1x2[2]/93,sdl2,dic(5;6)(q1?1.2;q12~13)[3]/95,sdl2,+15[2]"
     #report = "46,XX,t(12;20),-7,+mar[10]/92,slx2,-t(12;20),-mar[10]"
-    report = "46,XX,t(3;3)(q21.4;q26),inv(3)(q21q26)[20],inv(16)(p13q22.3)"
+    #report = "46,XX,t(3;3)(q21.4;q26),inv(3)(q21q26)[20],inv(16)(p13q22.3)"
     #report = "46,XY,t(5;11)(q35;p11)?c,?add(16)(q23~q24)[10]"
     #report = "45,XX,add(1)(p11),-3,add(5)(q31),add(8)(p11),?add(9)(q34),-12,-13,-17,?add(19)(q13),-22,+4mar,inc[cp5]/46,XX[2]"
-    #report = "49,XY,der(5)t(5;6)(q23;q13),-6,i(9)(q10),+11,del(12)(p12),+19,+22,+mar[21]"
+    report = "49,XY,der(5)t(5;6)(q23;q13),-6,i(9)(q10),+11,del(12)(p12),+19,+22,+2mar[21]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE,
                                  only_positive= True)
     print(report)
