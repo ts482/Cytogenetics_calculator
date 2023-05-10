@@ -543,8 +543,18 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                     del verbose_dict[a]
                 else:
                     verbose_dict[a] = 'Normal'
-#         if re.search('mar', a): #no longer the case to remove mar
-#             removed.add(a)
+        #counting number of markers present
+        if re.search('mar', a):
+           removed.add(a) #mar should have own abnormality count to prevent double-counting
+           mar_plural = re.search('\+(\d)',a)
+           if mar_plural:
+               mar += int(mar_plural.groups()[0])
+               if verbose:
+                   verbose_dict[a].append(f'markers_added: {int(mar_plural.groups()[0])}')
+               else:
+                   mar += 1
+                   if verbose:
+                       verbose_dict[a].append('markers_added: 1')
 
         #checking abnormalities
         if a not in removed:
@@ -573,18 +583,6 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                     col_true = two_part_translocation_check(a,
                                 col_true, prop_dict, verbose-False)
                 
-            
-            #counting number of markers present
-            if re.search('mar', a):
-                mar_plural = re.search('\+(\d)',a)
-                if mar_plural:
-                    mar += int(mar_plural.groups()[0])
-                    if verbose:
-                        verbose_dict[a].append(f'markers_added: {int(mar_plural.groups()[0])}')
-                else:
-                    mar += 1
-                    if verbose:
-                        verbose_dict[a].append('markers_added: 1')
             
             #detecting presence on monosomies
             if re.fullmatch('-[0-9XxYy]{1,2}', a):
