@@ -533,6 +533,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     der = 0
     mar = 0
     er_mar = 0 #counts the erroneously cytogenetic count for markers
+    print(abnorms)
     for a in abnorms:
         if verbose:
             verbose_dict[a] = [f'abnormality count = {final_abn_count[a]}']
@@ -641,7 +642,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                     
     #abnormality count is equal to all non-removed + der is double counted
     row['Number of cytogenetic abnormalities'] = len(abnorms) + der + mar - er_mar
-    
+
     row['Monosomy'] = mono
     row['Polysomy'] = poly
     row['Structural'] = struc + mar
