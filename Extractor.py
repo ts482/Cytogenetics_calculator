@@ -483,7 +483,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
        
         
         for a in clone_abnorms:
-            if re.fullmatch('(\d\d([~-]\d\d)?|[XxYy][XxYy]?|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?(x\d+)?', a):
+            if re.fullmatch('(\d\d([~-]\d\d)?(<\dn>)?|[XxYy][XxYy]?|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?(x\d+)?', a):
                 removed.add(a)
         
         clone_abnorms = [ab for ab in clone_abnorms if ab not in removed]
@@ -538,7 +538,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
         if verbose:
             verbose_dict[a] = [f'abnormality count = {final_abn_count[a]}']
         #removing normal report segments
-        if re.fullmatch('(\d\d([~-]\d\d)?|[XxYy][XxYy]?|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?', a):
+        if re.fullmatch('(\d\d([~-]\d\d)?(<\dn>)?|[XxYy][XxYy]?|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?', a):
             removed.add(a)
             if verbose:
                 if a.endswith(']'):
@@ -818,7 +818,6 @@ def base_extraction():
     return ex
 
 def extraction_2022():
-    # additionally checks for 't(8;16)(p11;p13)', 't(3q26.2;v)'
     ex = [ # sex chromosome monosmies 
     "-Y", "-X",
     #deletions
