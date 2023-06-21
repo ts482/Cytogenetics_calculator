@@ -146,6 +146,10 @@ def properties_dict(karyotypes, properties = None):
         else:
             v = substitute_v(v)
         
+        #special case for DEK/NUP214 fusion
+        if v == 't\(6;9\)\(p22(?:\.[2-4])?;q34(?:\.[0-2])?\)':
+            v = 't\(6;9\)\(p2(?:3|2\.[2-4]);q34(?:\.[0-2])?\)'
+        
         #special case for dots
         #if v == "t\(8;16\)\(p11;p13\)":
         #    v = "t\(8;16\)\(p11\.?\d?;p13\.?\d?\)"
@@ -192,6 +196,9 @@ def gram_error(string, verbose=False):
     warning = []
     chr_count = {}
     
+    
+    #ERRORS
+    
     #basic report errors
     if string == 'Error':
         error.append('String report missing')
@@ -202,14 +209,24 @@ def gram_error(string, verbose=False):
     if re.search('or', string.lower()):
         error.append('String contains \'or\' and therefore cannot be interpreted')
     
-    #highlight if error contains uncertainty
-    if re.search('\\?', string):
-        warning.append('Question mark in string means report is uncertain')
         
     #all reports should include commas somewhere 
     if not re.search(',', string):
         error.append('Missing comma')
 
+    #incorrectly counts abnormalities if split character are together
+    if re.search('[/,[]{2}', string):
+        if re.search('//', string):
+            error.append('The karyotype appears to be a chimeric karyotype post stem cell transplant. The app is not designed to analyse these reports')
+        else:
+            error.append('The following symbols must not be next to another or themselves: / , [')
+        
+    if re.search('(?:p|q)ter|::', string):
+        seq = re.search('(?:p|q)ter|::', string).group(0)
+        error.append(f"'{seq}' - this extractor has not been set up to detect karyotypes written in this format")
+    
+    ## WARNINGS
+    
     #checking for YX
 
     if re.search('YX', string):
@@ -222,9 +239,14 @@ def gram_error(string, verbose=False):
     if re.search('<\dn>', string):
         warning.append('polyploidy present')
         
-    #incorrectly counts abnormalities if split character are together
-    if re.search('[/,[]{2}', string):
-        error.append('The following symbols must not be next to another or themselves: / , [')
+    #highlight if error contains uncertainty
+    if re.search('\\?', string):
+        warning.append('Question mark in string means report is uncertain')
+        
+    if re.search('inc', string):
+        warning.append('Note incomplete karyotype reported, additional abnormalities may not have been identified by this test')
+        
+
     
     #grammatical rules regarding symbol ratios
     missing = list()
@@ -277,6 +299,9 @@ def gram_error(string, verbose=False):
             
             if high_num > 64:
                 warning.append(f'high chromosome number detected indicating polyploidy: {high_num}.')
+                while expected + 18 < high_num:    
+                    expected += 23
+                
             elif high_num > 49:
                 warning.append(f' high chromosome number detected indicating hyperploidy: {high_num}')
         
@@ -295,6 +320,8 @@ def gram_error(string, verbose=False):
                 num = int(chrom[:2])
                 if num > 64:
                     warning.append(f'high chromosome number detected indicating polyploidy: {num}.')
+                    while expected + 18 < num:
+                        expected += 23
                 elif num > 49:
                     warning.append(f' high chromosome number detected indicating hyperploidy: {num}')
             except ValueError:
@@ -442,6 +469,8 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     all_clone_abnorms = []
     abnorm_set = set()
     
+    removed_string = '(\d\d([~-]\d\d)?(<\dn>)?|[XxYy][XxYy]?|inc|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?(x\d+)?'
+    
     for i,clone in enumerate(clones):
     
         #initialising counts and sets for abnormalities
@@ -483,7 +512,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
        
         
         for a in clone_abnorms:
-            if re.fullmatch('(\d\d([~-]\d\d)?(<\dn>)?|[XxYy][XxYy]?|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?(x\d+)?', a):
+            if re.fullmatch(removed_string,a):
                 removed.add(a)
         
         clone_abnorms = [ab for ab in clone_abnorms if ab not in removed]
@@ -533,12 +562,11 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     der = 0
     mar = 0
     er_mar = 0 #counts the erroneously cytogenetic count for markers
-    print(abnorms)
     for a in abnorms:
         if verbose:
             verbose_dict[a] = [f'abnormality count = {final_abn_count[a]}']
         #removing normal report segments
-        if re.fullmatch('(\d\d([~-]\d\d)?(<\dn>)?|[XxYy][XxYy]?|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?', a):
+        if re.fullmatch(removed_string, a):
             removed.add(a)
             if verbose:
                 if a.endswith(']'):
@@ -645,7 +673,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
 
     row['Monosomy'] = mono
     row['Polysomy'] = poly
-    row['Structural'] = struc + mar
+    row['Structural'] = struc + mar + der
     #row['abnormal(17p)'] = seventeen_p
     for c in col_true:
         row[prop_dict[c]] = True
@@ -917,7 +945,7 @@ if __name__ == '__main__':
     #report = "46,XX,t(3;3)(q21.4;q26),inv(3)(q21q26)[20],inv(16)(p13q22.3)"
     #report = "46,XY,t(5;11)(q35;p11)?c,?add(16)(q23~q24)[10]"
     #report = "45,XX,add(1)(p11),-3,add(5)(q31),add(8)(p11),?add(9)(q34),-12,-13,-17,?add(19)(q13),-22,+4mar,inc[cp5]/46,XX[2]"
-    report = "49,XY,der(5)t(5;6)(q23;q13),-6,i(9)(q10),+11,del(12)(p12),+19,+22,+2mar[21]"
+    report = "49,XY,der(5)t(5;6)(q23;q13),-6,i(9)(q10),+11,del(12)(p12),+19,+22,+2mar,inc[21]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE,
                                  only_positive= True)
     print(report)
