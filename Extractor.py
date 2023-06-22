@@ -514,6 +514,9 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
         for a in clone_abnorms:
             if re.fullmatch(removed_string,a):
                 removed.add(a)
+            #removing constitutional changes
+            if re.search('[XxYy1-9]c$', a):
+                removed.add(a)
         
         clone_abnorms = [ab for ab in clone_abnorms if ab not in removed]
         
@@ -945,7 +948,8 @@ if __name__ == '__main__':
     #report = "46,XX,t(3;3)(q21.4;q26),inv(3)(q21q26)[20],inv(16)(p13q22.3)"
     #report = "46,XY,t(5;11)(q35;p11)?c,?add(16)(q23~q24)[10]"
     #report = "45,XX,add(1)(p11),-3,add(5)(q31),add(8)(p11),?add(9)(q34),-12,-13,-17,?add(19)(q13),-22,+4mar,inc[cp5]/46,XX[2]"
-    report = "49,XY,der(5)t(5;6)(q23;q13),-6,i(9)(q10),+11,del(12)(p12),+19,+22,+2mar,inc[21]"
+    #report = "49,XY,der(5)t(5;6)(q23;q13),-6,i(9)(q10),+11,del(12)(p12),+19,+22,+2mar,inc[21]"
+    report = "47,XY,+21c[6]/48,idem,+11,der(19)t(1;19)(q23;p13.3)[4]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE,
                                  only_positive= True)
     print(report)
