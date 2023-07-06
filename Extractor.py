@@ -23,7 +23,7 @@ def load_file(file):
         whether the streamlit interface should be used
     '''
 
-    karyotypes = pd.read_csv(file)    
+    karyotypes = pd.read_csv(file)
     #karyotypes = karyotypes.drop(columns='ID')
     
     return karyotypes
@@ -273,7 +273,7 @@ def gram_error(string, verbose=False):
         if not re.search('(idem)|(sd?l)', s):
             expected = 46
         else:
-            if re.search('(idem)|(sd?l\d?)x\d', s):
+            if re.search('(idem)|(sd?l\d?(x\d)?)', s):
                 warning.append('stemline duplication present, results should be taken with caution')
         expected -= len(re.findall('\-', s))
         expected += len(re.findall('\+', s))
@@ -591,7 +591,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                     for v in verbose_list:
                         verbose_dict[a].append(v)
                 else:
-                    col_true = check_trans_dict(trans_dict, col_true)
+                    col_true = check_trans_dict(trans_dict, prop_dict, col_true)
 
             #checking two-part translocations
             if re.search('t\(([XxYy\d]{1,2});([XxYy\d]{1,2})\)\(([pq])\d*(\.\d+)?;([pq])\d*(\.\d+)?\)',
@@ -649,20 +649,20 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                         verbose_dict[a].append('markers_added: 1')
             
             #working out if any abnormalities are to do with 17p
-#            if re.search('17.*p|-17',a):
-#                m = re.search('[0-9XxYy]{1,2}?;[0-9XxYy]{1,2}?', a)
-#                if m:
-#                    split = re.split(';', m.group())
-#                    if re.findall('[pq]', a)[split.index('17')] == 'p':
-#                        seventeen_p = True
-#                        if verbose:
-#                            verbose_dict[a].append('17p')
-#                    else:
-#                        seventeen_p = False
-#                else:
-#                    seventeen_p = True
-#                    if verbose:
-#                        verbose_dict[a].append('17p')
+            if re.search('17.*p|-17',a):
+                m = re.search('[0-9XxYy]{1,2}?;[0-9XxYy]{1,2}?', a)
+                if m:
+                    split = re.split(';', m.group())
+                    if re.findall('[pq]', a)[split.index('17')] == 'p':
+                        seventeen_p = True
+                        if verbose:
+                            verbose_dict[a].append('17p')
+                    else:
+                        seventeen_p = False
+                else:
+                    seventeen_p = True
+                    if verbose:
+                        verbose_dict[a].append('17p')
             
             #looping through pre-set properties
             for p in prop_dict:
@@ -677,7 +677,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     row['Monosomy'] = mono
     row['Polysomy'] = poly
     row['Structural'] = struc + mar + der
-    #row['abnormal(17p)'] = seventeen_p
+    row['abnormal(17p)'] = seventeen_p
     for c in col_true:
         row[prop_dict[c]] = True
     if verbose:
