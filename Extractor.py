@@ -43,7 +43,7 @@ def dotreplace(matchobj):
 
 def substitute_v(t):
     #important to note f curly braces and regex curly braces
-    der = re.search('der\(([0-9XxYy]{1,2})\)t', t)
+    der = re.search('i?der\(([0-9XxYy]{1,2})\)t', t)
     if der:
         der_chrom = der.group(1)
     m = re.search('v;([0-9XxYy]{1,2})([qp]\d{0,2}(?:\.\d)?)?', t)
@@ -64,17 +64,17 @@ def substitute_v(t):
         elif not armnum:
             arm = arm + '(?:\d{1,2})?(?:\.\d)?'
         if der:
-            return f'(der\({der_chrom}\)' + 't\((?:[0-9XxYy]){1,2};' + \
+            return f'(i?der\({der_chrom}\)' + 't\((?:[0-9XxYy]){1,2};' + \
                 f'{chrom}\)' + '\([qp]\d{1,2}(?:\.\d)?;' + f'{arm}\))' + \
-                f'|(der\({der_chrom}\)t\({chrom};' + '(?:[0-9XxYy]){1,2}\)' + \
+                f'|(i?der\({der_chrom}\)t\({chrom};' + '(?:[0-9XxYy]){1,2}\)' + \
                 f'\({arm};' + '[qp]\d{1,2}(?:\.\d)?\))'
         return 't\((?:[0-9XxYy]{1,2});' + f'{chrom}\)' + \
             '\([qp]\d{1,2}(?:\.\d)?;' + f'{arm}\)' + \
             f'|t\({chrom};' + '(?:[0-9XxYy]){1,2}\)'+ f'\({arm};' + \
                 '[qp]\d{1,2}(?:\.\d)?\)'
     if der:
-        return f'(der\({der_chrom}\)' + 't\((?:[0-9XxYy]){1,2};' + \
-            f'{chrom}\))|(der\({der_chrom}\)t\({chrom};' + '(?:[0-9XxYy]){1,2}\))'
+        return f'(i?der\({der_chrom}\)' + 't\((?:[0-9XxYy]){1,2};' + \
+            f'{chrom}\))|(i?der\({der_chrom}\)t\({chrom};' + '(?:[0-9XxYy]){1,2}\))'
     return '(t\((?:[0-9XxYy]){1,2};' + f'{chrom}\))|(t\({chrom};' + \
         '(?:[0-9XxYy]){1,2}\))'
 
@@ -630,7 +630,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                     if verbose:
                         verbose_dict[a].append('Structural count + 1')
             
-            if re.search('der', a):
+            if re.search('i?der', a):
                 der += 1
                 if verbose:
                     verbose_dict[a].append('der count + 1')
