@@ -278,28 +278,30 @@ def gram_error(string, verbose=False):
         expected -= len(re.findall('\-', s))
         expected += len(re.findall('\+', s))
         if re.search('mar', s):
-            mar_plural = re.search('\+(\d)(~\d)?mar',s)
+            mar_plural = re.search('\+(\d~)(\d)?mar',s)
             if mar_plural:
-                expected += int(mar_plural.groups()[0]) - 1
+                expected += int(mar_plural.groups()[1]) - 1
                 tilda_present =  re.search('\+(\d)~(\d)mar', s)
                 #error if variable number of markers included (e.g. +2~4mar)
                 if tilda_present:
-                    d = tilda_present.group(1)
-                    warning.append(f'Variable number of markers in report. Minimum number ({d}) used by default')
+                    d = tilda_present.group(2)
+                    warning.append(f'Variable number of markers in report. Maximum number ({d}) used by default')
         if verbose:
             chr_count['Expected number'] = expected
         
         #in the case of a range of potential chromosome counts
-        if re.search('[~]', chrom):
+        if re.search('[~-]', chrom):
             try:
                 low_num, high_num = int(chrom[:2]), int(chrom[-2:])
             except ValueError:
                 error.append('Part of report not clearly defined by two chromosome numbers followed by comma (e.g. "43~45,")')
                 continue
             
+            warning.append(f'variable number of chromosomes detected in subsection {i+1}')
+            
             if high_num > 64:
                 warning.append(f'high chromosome number detected indicating polyploidy: {high_num}.')
-                while expected + 18 < high_num:    
+                while expected + 18 < high_num:
                     expected += 23
                 
             elif high_num > 49:
@@ -401,11 +403,19 @@ def check_trans_dict(trans_dict, col_true,prop_dict, verbose=False):
     for i in range(len(chr_keys)-1):
         sorted_list = sorted([chr_keys[i],chr_keys[i+1]])
         first_chr, second_chr = sorted_list[0], sorted_list[1]
+        if isinstance(trans_dict, dict):
+            first_arm, second_arm = trans_dict[first_chr], trans_dict[second_chr]
         for p in prop_dict:
-            if re.search(p, f't({first_chr};{second_chr})'):
-                col_true.add(p)
-                if verbose:
-                    verbose_list.append(p)
+            if isinstance(trans_dict, list):
+                if re.search(p, f't({first_chr};{second_chr})'):
+                    col_true.add(p)
+                    if verbose:
+                        verbose_list.append(p)
+            elif isinstance(trans_dict, dict):
+                if re.search(p, f't({first_chr};{second_chr})({first_arm};{second_arm})'):
+                    col_true.add(p)
+                    if verbose:
+                        verbose_list.append(prop_dict[p])
     if verbose:
         return col_true, verbose_list
     return col_true
@@ -641,9 +651,14 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                 er_mar += 1
                 mar_plural = re.search('\+(\d)',a)
                 if mar_plural:
-                    mar += int(mar_plural.groups()[0])
+                    variable_markers = re.search('\+\d~(\d)', a)
+                    if variable_markers:
+                        mar_added = int(variable_markers.groups()[0])
+                    else:
+                        mar_added = int(mar_plural.groups()[0])
+                    mar += mar_added
                     if verbose:
-                        verbose_dict[a].append(f'markers_added: {int(mar_plural.groups()[0])}')
+                        verbose_dict[a].append(f'markers_added: {mar_added}')
                 else:
                     mar += 1
                     if verbose:
@@ -949,8 +964,9 @@ if __name__ == '__main__':
     #report = "46,XX,t(3;3)(q21.4;q26),inv(3)(q21q26)[20],inv(16)(p13q22.3)"
     #report = "46,XY,t(5;11)(q35;p11)?c,?add(16)(q23~q24)[10]"
     #report = "45,XX,add(1)(p11),-3,add(5)(q31),add(8)(p11),?add(9)(q34),-12,-13,-17,?add(19)(q13),-22,+4mar,inc[cp5]/46,XX[2]"
-    #report = "49,XY,der(5)t(5;6)(q23;q13),-6,i(9)(q10),+11,del(12)(p12),+19,+22,+2mar,inc[21]"
-    report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
+    #report = "49~51,XY,der(5)t(5;6)(q23;q13),-6,i(9)(q10),+11,del(12)(p12),+19,+22,+2~4mar,inc[21]"
+    #report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
+    report = "46,XY,t(9;22;10)(q34;q11.2;q11)[12]/45,X,-Y,t(9;22;10)(q34;q11.2;q11)[8]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE,
                                  only_positive= True)
     print(report)
