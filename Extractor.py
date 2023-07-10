@@ -297,7 +297,7 @@ def gram_error(string, verbose=False):
                 error.append('Part of report not clearly defined by two chromosome numbers followed by comma (e.g. "43~45,")')
                 continue
             
-            warning.append(f'variable number of chromosomes detected in subsection {i+1}')
+            warning.append(f'variable number of chromosomes detected in subsection {i+1}. Higher number used.')
             
             if high_num > 64:
                 warning.append(f'high chromosome number detected indicating polyploidy: {high_num}.')
