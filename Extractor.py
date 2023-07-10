@@ -651,7 +651,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                 er_mar += 1
                 mar_plural = re.search('\+(\d)',a)
                 if mar_plural:
-                    variable_markers = re.search('\+\d~(\d)', a)
+                    variable_markers = re.search('\+\d[~-](\d)', a)
                     if variable_markers:
                         mar_added = int(variable_markers.groups()[0])
                     else:
