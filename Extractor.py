@@ -665,20 +665,20 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                         verbose_dict[a].append('markers_added: 1')
             
             #working out if any abnormalities are to do with 17p
-            if re.search('17.*p|-17',a):
-                m = re.search('[0-9XxYy]{1,2}?;[0-9XxYy]{1,2}?', a)
-                if m:
-                    split = re.split(';', m.group())
-                    if re.findall('[pq]', a)[split.index('17')] == 'p':
-                        seventeen_p = True
-                        if verbose:
-                            verbose_dict[a].append('17p')
-                    else:
-                        seventeen_p = False
-                else:
-                    seventeen_p = True
-                    if verbose:
-                        verbose_dict[a].append('17p')
+            #if re.search('17.*p|-17',a):
+                #m = re.search('[0-9XxYy]{1,2}?;[0-9XxYy]{1,2}?', a)
+                #if m:
+                #    split = re.split(';', m.group())
+                #    if re.findall('[pq]', a)[split.index('17')] == 'p':
+                #        seventeen_p = True
+                #        if verbose:
+                #            verbose_dict[a].append('17p')
+                #    else:
+                #        seventeen_p = False
+                #else:
+                #    seventeen_p = True
+                #    if verbose:
+                #        verbose_dict[a].append('17p')
             
             #looping through pre-set properties
             for p in prop_dict:
