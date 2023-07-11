@@ -67,7 +67,8 @@ if cytogenetics:
         
         non_count_results = [r for r in result['result'] if r not in 
                              ['Number of cytogenetic abnormalities',
-                              'Polysomy','Monosomy','Structural', 'Warnings',
+                              'Polysomy','Monosomy', 'NonSexChromosomeMonosomies',
+                              'Structural', 'Warnings',
                               'Cytogenetics', 'Error', 'Error description']]
         if len(non_count_results)>0:    
             st.write(f'Other abnormalities detected from pre-set list: {non_count_results}')
@@ -89,7 +90,8 @@ if file:
     
     #sorting column order
     first_order_cols = ['Cytogenetics', 'Error', 'Error description', 'Warnings',
-             'Number of cytogenetic abnormalities', 'Polysomy','Monosomy','Structural']
+             'Number of cytogenetic abnormalities', 'Polysomy','Monosomy',
+                        'NonSexChromosomeMonosomies', 'Structural']
     rest_cols = [c for c in results.columns if c not in first_order_cols]
     results = results[first_order_cols + rest_cols]
     #st.dataframe(results)
