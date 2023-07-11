@@ -32,7 +32,7 @@ def download_link(object_to_download, download_filename, download_link_text):
 
 st.write('# Cytogenetics calculator')
 
-base_mode = st.radio('select cytogenetic extracot', ['BJH2021','ELN2022'])
+base_mode = st.radio('select cytogenetic extractor', ['BJH2021','ELN2022'])
 
 prop_dict = available_configs()[base_mode]
 
@@ -88,7 +88,7 @@ if file:
     results['Error'] = results['Error'].astype(bool)
     
     #sorting column order
-    first_order_cols = ['ID','Cytogenetics', 'Error', 'Error description', 'Warnings',
+    first_order_cols = ['Cytogenetics', 'Error', 'Error description', 'Warnings',
              'Number of cytogenetic abnormalities', 'Polysomy','Monosomy','Structural']
     rest_cols = [c for c in results.columns if c not in first_order_cols]
     results = results[first_order_cols + rest_cols]
