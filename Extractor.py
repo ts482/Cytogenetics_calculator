@@ -570,6 +570,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     
     col_true = set()
     mono = 0
+    non_sex_mono = 0
     poly = 0
     struc = 0
     seventeen_p = False
@@ -620,6 +621,10 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
             #detecting presence on monosomies
             if re.fullmatch('-[0-9XxYy]{1,2}', a):
                 mono += 1
+                if re.fullmatch('-[0-9]{1,2}', a):
+                    non_sex_mono +=1
+                    if verbose:
+                        verbose_dict[a].append('non sex chromosome monosomy count + 1')
                 if verbose:
                     verbose_dict[a].append('monosomy count + 1')
                 #detecting number of structular changes
@@ -690,6 +695,8 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     row['Polysomy'] = poly
     row['Structural'] = struc + mar + der
     row['abnormal(17p)'] = seventeen_p
+    
+    row['Non Sex Chromosome Monosomies'] = non_sex_mono
     for c in col_true:
         row[prop_dict[c]] = True
     if verbose:
