@@ -664,28 +664,24 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                     if verbose:
                         verbose_dict[a].append('markers_added: 1')
             
-            #working out if any abnormalities are to do with 17p
-            #if re.search('17.*p|-17',a):
-                #m = re.search('[0-9XxYy]{1,2}?;[0-9XxYy]{1,2}?', a)
-                #if m:
-                #    split = re.split(';', m.group())
-                #    if re.findall('[pq]', a)[split.index('17')] == 'p':
-                #        seventeen_p = True
-                #        if verbose:
-                #            verbose_dict[a].append('17p')
-                #    else:
-                #        seventeen_p = False
-                #else:
-                #    seventeen_p = True
-                #    if verbose:
-                #        verbose_dict[a].append('17p')
-            
             #looping through pre-set properties
             for p in prop_dict:
                 if re.search(p, a):
                     col_true.add(p)
                     if verbose:
                         verbose_dict[a].append(prop_dict[p])
+            
+            #working out if any abnormalities are to do with 17p
+            if any([re.search('17(?:/)/()?p',a), 
+                    re.search('-17',a), 
+                    re.search( 't\\((?:[0-9XxYy]{1,2});17\\)\\([qp]\\d{1,2}(?:\\.\\d)?;'+
+                              'p(?:\\d{1,2})?(?:\\.\\d)?\\)|'+
+                              't\\(17;(?:[0-9XxYy]){1,2}\\)\\(p(?:\\d{1,2})?(?:\\.\\d)?;'+
+                              '[qp]\\d{1,2}(?:\\.\\d)?\\)', a)]):
+                seventeen_p = True
+                if verbose:
+                    verbose_dict[a].append('17p')
+            
                     
     #abnormality count is equal to all non-removed + der is double counted
     row['Number of cytogenetic abnormalities'] = len(abnorms) + der + mar - er_mar
@@ -960,7 +956,7 @@ if __name__ == '__main__':
     #report = "47,XY,+13,i(13)(q10)x2[2]/47,XY,+13[4]/46,XY[8]"
     #report = "46,XY,del(3)(p13),del(5)(q15q33),del(7)(p13p22),add(12)(p13)[3]/45,sl,dic(20;21)(q1;p1)[5]/47,sl1,+add(21)(p1),+mar[2]"
     #report = "46,XY,t(12;20)(q15;q11.2)[6]/47,sl,+13[2]/94,sdl1x2[2]/93,sdl2,dic(5;6)(q1?1.2;q12~13)[3]/95,sdl2,+15[2]"
-    report = "46,XX,t(12;20),-7,+mar[10]/92,slx2,-t(12;20),-mar[10]"
+    report = "46,XX,t(12;20),-17,+mar[10]/92,slx2,-t(12;20),-mar[10]"
     #report = "46,XX,t(3;3)(q21.4;q26),inv(3)(q21q26)[20],inv(16)(p13q22.3)"
     #report = "46,XY,t(5;11)(q35;p11)?c,?add(16)(q23~q24)[10]"
     #report = "45,XX,add(1)(p11),-3,add(5)(q31),add(8)(p11),?add(9)(q34),-12,-13,-17,?add(19)(q13),-22,+4mar,inc[cp5]/46,XX[2]"
