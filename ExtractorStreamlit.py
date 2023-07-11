@@ -32,7 +32,7 @@ def download_link(object_to_download, download_filename, download_link_text):
 
 st.write('# Cytogenetics calculator')
 
-base_mode = st.radio('select cytogenetic extracot', ['BJH2021','ELN2022'])
+base_mode = st.radio('select cytogenetic extractor', ['BJH2021','ELN2022'])
 
 prop_dict = available_configs()[base_mode]
 
