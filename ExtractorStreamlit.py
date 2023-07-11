@@ -83,7 +83,7 @@ if file:
     karyotypes = load_file(file)
     karyotypes['Error'] = bool(False)
     karyotypes['Error description'] = None
-    results = karyotypes.apply(extract_from_string, axis=1, args= (prop_dict,))
+    results = karyotypes.apply(parse_karyotype_clone, axis=1, args= (prop_dict,))
     results.loc[results['Error'] == False] = results.loc[results['Error']==False].fillna(False)
     results['Error'] = results['Error'].astype(bool)
     
