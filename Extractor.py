@@ -696,7 +696,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     row['Structural'] = struc + mar + der
     row['abnormal(17p)'] = seventeen_p
     
-    row['Non Sex Chromosome Monosomies'] = non_sex_mono
+    row['NonSexChromosomeMonosomies'] = non_sex_mono
     for c in col_true:
         row[prop_dict[c]] = True
     if verbose:
