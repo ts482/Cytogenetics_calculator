@@ -150,6 +150,10 @@ def properties_dict(karyotypes, properties = None):
         if v == 't\(6;9\)\(p22(?:\.[2-4])?;q34(?:\.[0-2])?\)':
             v = 't\(6;9\)\(p2(?:3|2\.[2-4]);q34(?:\.[0-2])?\)'
         
+        #making sure monosomies and trisomies are counted from start:
+        if re.search('\\\[-+][1-9XxYy]{1,2}', v):
+            v = re.sub('\\\\', '^\\\\', v)
+        
         #special case for dots
         #if v == "t\(8;16\)\(p11;p13\)":
         #    v = "t\(8;16\)\(p11\.?\d?;p13\.?\d?\)"
@@ -677,7 +681,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                         verbose_dict[a].append(prop_dict[p])
             
             #working out if any abnormalities are to do with 17p
-            if any([re.search('17(?:/)/()?p',a), 
+            if any([re.search('17(?:\)\()?p',a), 
                     re.search('-17',a), 
                     re.search( 't\\((?:[0-9XxYy]{1,2});17\\)\\([qp]\\d{1,2}(?:\\.\\d)?;'+
                               'p(?:\\d{1,2})?(?:\\.\\d)?\\)|'+
