@@ -236,6 +236,10 @@ def gram_error(string, verbose=False):
     
     ## WARNINGS
     
+    #multiple clones contain markers
+    if re.search('mar.*/.*mar', string):
+        warning.append('multiple clones contain markers, marker counts may not be accurate')
+    
     #checking for YX
 
     if re.search('YX', string):
@@ -972,13 +976,14 @@ if __name__ == '__main__':
     #report = "47,XY,+13,i(13)(q10)x2[2]/47,XY,+13[4]/46,XY[8]"
     #report = "46,XY,del(3)(p13),del(5)(q15q33),del(7)(p13p22),add(12)(p13)[3]/45,sl,dic(20;21)(q1;p1)[5]/47,sl1,+add(21)(p1),+mar[2]"
     #report = "46,XY,t(12;20)(q15;q11.2)[6]/47,sl,+13[2]/94,sdl1x2[2]/93,sdl2,dic(5;6)(q1?1.2;q12~13)[3]/95,sdl2,+15[2]"
-    report = "46,XX,t(12;20),-17,+mar[10]/92,slx2,-t(12;20),-mar[10]"
+    #report = "46,XX,t(12;20),-17,+mar[10]/92,slx2,-t(12;20),-mar[10]"
     #report = "46,XX,t(3;3)(q21.4;q26),inv(3)(q21q26)[20],inv(16)(p13q22.3)"
     #report = "46,XY,t(5;11)(q35;p11)?c,?add(16)(q23~q24)[10]"
     #report = "45,XX,add(1)(p11),-3,add(5)(q31),add(8)(p11),?add(9)(q34),-12,-13,-17,?add(19)(q13),-22,+4mar,inc[cp5]/46,XX[2]"
     #report = "49~51,XY,der(5)t(5;6)(q23;q13),-6,i(9)(q10),+11,del(12)(p12),+19,+22,+2~4mar,inc[21]"
     #report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
     #report = "46,XY,t(9;22;10)(q34;q11.2;q11)[12]/45,X,-Y,t(9;22;10)(q34;q11.2;q11)[8]"
+    report = "45,XY,-7,del(13)(q14q31),der(16)t(7;16)(q11.2;q12-13)[4]/46,XY[6]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE,
                                  only_positive= True)
     print(report)
