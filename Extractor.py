@@ -213,7 +213,12 @@ def gram_error(string, verbose=False):
     if re.search('or', string.lower()):
         error.append('String contains \'or\' and therefore cannot be interpreted')
     
+    if re.search('^\D', string):
+        error.append('Report must start with a number')
         
+    if not re.search('\]$', string):
+        error.append('report must end in \']\' ')
+
     #all reports should include commas somewhere 
     if not re.search(',', string):
         error.append('Missing comma')
