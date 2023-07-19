@@ -313,12 +313,12 @@ def gram_error(string, verbose=False):
             warning.append(f'variable number of chromosomes detected in subsection {i+1}. Higher number used.')
             
             if high_num > 64:
-                warning.append(f'high chromosome number detected indicating polyploidy: {high_num}.')
+                warning.append(f'high chromosome number detected indicating polyploidy: {high_num}. Abnormality counts should be treated with caution.')
                 while expected + 18 < high_num:
                     expected += 23
                 
             elif high_num > 49:
-                warning.append(f' high chromosome number detected indicating hyperploidy: {high_num}')
+                warning.append(f' high chromosome number detected indicating hyperploidy: {high_num}. Abnormality counts should be treated with caution.')
         
             if verbose:
                 chr_count['Reported number'] = str(low_num) + '~' + str(high_num)
