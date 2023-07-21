@@ -492,7 +492,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     all_clone_abnorms = []
     abnorm_set = set()
     
-    removed_string = '(\d\d([~-]\d\d)?(<\dn>)?|[XxYy][XxYy]?|inc|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?(x\d+)?'
+    removed_string = '(\d\d([~-]\d\d)?(<\dn>)?|[XxYy]+|inc|(cp)?\d\d?\]|idem|sd?l\d?)(\??c)?(x\d+)?'
     
     for i,clone in enumerate(clones):
     
