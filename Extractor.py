@@ -305,7 +305,7 @@ def gram_error(string, verbose=False):
         #in the case of a range of potential chromosome counts
         if re.search('[~-]', chrom):
             try:
-                low_num, high_num = int(chrom[:2]), int(chrom[-2:])
+                low_num, high_num = map(lambda x: int(x),re.search('(\d+)[~-](\d+)','63~71<3n>').groups([1.2]))
             except ValueError:
                 error.append('Part of report not clearly defined by two chromosome numbers followed by comma (e.g. "43~45,")')
                 continue
@@ -332,16 +332,16 @@ def gram_error(string, verbose=False):
         #if only one chromosome count is present
         else:
             try:
-                num = int(chrom[:2])
-                if num > 64:
-                    warning.append(f'high chromosome number detected indicating polyploidy: {num}.')
-                    while expected + 18 < num:
-                        expected += 23
-                elif num > 49:
-                    warning.append(f' high chromosome number detected indicating hyperploidy: {num}')
+                num = int(re.search('^(\d+)', chrom).group(0))
             except ValueError:
                 error.append('Start of report missing clear chromosome number followed by comma (e.g. "46,")')
                 continue
+            if num > 64:
+                warning.append(f'high chromosome number detected indicating polyploidy: {num}.')
+                while expected + 18 < num:
+                    expected += 23
+            elif num > 49:
+                warning.append(f' high chromosome number detected indicating hyperploidy: {num}')
             if verbose:
                 chr_count['Reported number'] = num
             if expected == num:
