@@ -259,7 +259,8 @@ def gram_error(string, verbose=False):
     if re.search('inc', string):
         warning.append('Note incomplete karyotype reported, additional abnormalities may not have been identified by this test')
         
-
+    if re.search('t\([0-9XxYy]{1,2};[0-9XxYy]\d?;[0-9XxYy]\d?',string):
+        warning.append('translocation with more than 2 parts detected. Results should be treated with caution.')
     
     #grammatical rules regarding symbol ratios
     missing = list()
