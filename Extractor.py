@@ -330,7 +330,7 @@ def gram_error(string, verbose=False):
                 warning.append(f'chromosome number higher than expected in subsection number {i+1}')
                 
         #if only one chromosome count is present
-        else:
+        elif not error: #making sure no crashes occur from earlier spotted error
             try:
                 num = int(re.search('^(\d+)', chrom).group(0))
             except ValueError:
