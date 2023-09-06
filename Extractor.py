@@ -306,7 +306,7 @@ def gram_error(string, verbose=False):
         #in the case of a range of potential chromosome counts
         if re.search('[~-]', chrom):
             try:
-                low_num, high_num = map(lambda x: int(x),re.search('(\d+)[~-](\d+)','63~71<3n>').groups([1.2]))
+                low_num, high_num = map(lambda x: int(x),re.search('(\d+)[~-](\d+)',chrom).groups([1,2]))
             except ValueError:
                 error.append('Part of report not clearly defined by two chromosome numbers followed by comma (e.g. "43~45,")')
                 continue
@@ -898,7 +898,7 @@ def extraction_2022():
     'Trisomy8',
     #translocations ordered by first chromosome, then second chromosome:
     #t1
-    't(1;22)(p13.3;q13.1)',
+    't(1;3)(p36.3;q21.3)','t(1;22)(p13.3;q13.1)',
     #t2
     't(2;11)(p21;q23.3)', 
     #t3
@@ -981,11 +981,11 @@ if __name__ == '__main__':
     #report = "46,XX,t(3;3)(q21.4;q26),inv(3)(q21q26)[20],inv(16)(p13q22.3)"
     #report = "46,XY,t(5;11)(q35;p11)?c,?add(16)(q23~q24)[10]"
     #report = "45,XX,add(1)(p11),-3,add(5)(q31),add(8)(p11),?add(9)(q34),-12,-13,-17,?add(19)(q13),-22,+4mar,inc[cp5]/46,XX[2]"
-    #report = "49~51,XY,der(5)t(5;6)(q23;q13),-6,i(9)(q10),+11,del(12)(p12),+19,+22,+2~4mar,inc[21]"
+    report = "49~51,XY,der(5)t(5;6)(q23;q13),-6,i(9)(q10),+11,del(12)(p12),+19,+22,+2~4mar,inc[21]"
     #report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
     #report = "46,XY,t(9;22;10)(q34;q11.2;q11)[12]/45,X,-Y,t(9;22;10)(q34;q11.2;q11)[8]"
     #report = "45,XY,-7,del(13)(q14q31),der(16)t(7;16)(q11.2;q12-13)[4]/46,XY[6]"
-    report = "46,XX,t(9;11;5;22)(p21;q23.3;q35;q12)[10]"
+    #report = "46,XX,t(9;11;5;22)(p21;q23.3;q35;q12)[10]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE,
                                  only_positive= True)
     print(report)
