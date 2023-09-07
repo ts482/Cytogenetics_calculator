@@ -32,13 +32,17 @@ def dotreplace(matchobj):
     '''
     helper function for re.sub
     replaces chromosome decimals (e.g. "17p14(.2)"), with a string that makes
-    these decimal points optional, and accepts +/- .1 of the chromosome
+    these decimal points optional
+    
+    LEGACY COMMENTED OUT CODE - accepts +/- .1 of the chromosome
     '''
-    int_match = int(matchobj.group(2))
-    first_num = int_match-1
-    second_num = int_match+1
-    first_num, second_num = str(first_num), str(second_num)
-    return f'{matchobj.group(1)}(?:\.[{first_num}-{second_num}])?'
+    #int_match = int(matchobj.group(2))
+    #first_num = int_match-1
+    #second_num = int_match+1
+    #first_num, second_num = str(first_num), str(second_num)
+    #return f'{matchobj.group(1)}(?:\.[{first_num}-{second_num}])?'
+    return f'{matchobj.group(1)}(?:\.{matchobj.group(2)})?'
+
 
 
 def substitute_v(t):
@@ -150,7 +154,7 @@ def properties_dict(karyotypes, properties = None):
         
         #special case for DEK/NUP214 fusion
         if v == 't\(6;9\)\(p22(?:\.3)?;q34(?:\.1)?\)':
-            v = 't\(6;9\)\(p2(?:3|2\.3);q34(?:\.1)?\)'
+            v = 't\(6;9\)\(p2(?:3|2(?:\.3)?);q34(?:\.1)?\)'
         
         #making sure monosomies and trisomies are counted from start:
         if re.search('\\\[-+][1-9XxYy]{1,2}', v):
