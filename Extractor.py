@@ -120,7 +120,7 @@ def properties_dict(karyotypes, properties = None):
         
         
         if not re.search('\(v;|;v\)', v):
-            if not re.search('inv',v):
+            if not re.search('inv',v): #this bracket insertion is not applicable to inversions
                 #correctly formatting translocations by seperating p and q
                 matches = re.finditer('([0-9XxYy]{1,2})(p|q)',v)
                 for m in matches:
@@ -147,8 +147,11 @@ def properties_dict(karyotypes, properties = None):
             if re.search('[pq]\d{1,2}\\\.\d',v):
                 v = re.sub('([pq]\d{1,2})\\\.(\d)', dotreplace, v)
                 
+            #putting brackets at the end of inversions to stop catching
+            #wrong number on second chromosomes
+            if re.search('inv',v):
+                v = v + '\)'
                 
-            
         else:
             v = substitute_v(v)
         
@@ -992,6 +995,7 @@ if __name__ == '__main__':
     #report = "46,XY,t(9;22;10)(q34;q11.2;q11)[12]/45,X,-Y,t(9;22;10)(q34;q11.2;q11)[8]"
     #report = "45,XY,-7,del(13)(q14q31),der(16)t(7;16)(q11.2;q12-13)[4]/46,XY[6]"
     #report = "46,XX,t(9;11;5;22)(p21;q23.3;q35;q12)[10]"
+    report = "46,XX,inv(3)(q21.3q26.2)[20]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE,
                                  only_positive= True)
     print(report)
