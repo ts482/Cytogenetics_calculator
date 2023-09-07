@@ -56,9 +56,11 @@ def substitute_v(t):
         armnum = re.search('[qp]\d{1,2}', arm)
         if armdot:
             dotnum = armdot.group(1)
-            first_num = str(int(dotnum)-1)
-            second_num = str(int(dotnum)+1)
-            arm = re.sub('\.\d+', f'(?:\.[{first_num}-{second_num}])?', arm)
+            #first_num = str(int(dotnum)-1) #legacy code to do XpY.Z, where Z+/-1
+            #second_num = str(int(dotnum)+1)
+            #arm = re.sub('\.\d+', f'(?:\.[{first_num}-{second_num}])?', arm)
+            arm = re.sub('\.\d+', f'(?:\.{dotnum})?', arm)
+
         elif armnum:
             arm = arm + '(?:\.\d)?'
         elif not armnum:
@@ -147,8 +149,8 @@ def properties_dict(karyotypes, properties = None):
             v = substitute_v(v)
         
         #special case for DEK/NUP214 fusion
-        if v == 't\(6;9\)\(p22(?:\.[2-4])?;q34(?:\.[0-2])?\)':
-            v = 't\(6;9\)\(p2(?:3|2\.[2-4]);q34(?:\.[0-2])?\)'
+        if v == 't\(6;9\)\(p22(?:\.3)?;q34(?:\.1)?\)':
+            v = 't\(6;9\)\(p2(?:3|2\.3);q34(?:\.1)?\)'
         
         #making sure monosomies and trisomies are counted from start:
         if re.search('\\\[-+][1-9XxYy]{1,2}', v):
@@ -971,7 +973,7 @@ if __name__ == '__main__':
     #report = "47,XY,+11,t(3;19)(q26.2;p13.3)[4]"
     #report = " 46,xx,t(8;16)(p11.2;p13.3)[20]"
     #report = "45,XX,t(3;21)(q26;q?11.2),del(5)(q23-31q33),-7[14]"
-    #report = "46,XX,t(3;17)(q26.2;p13)[18]"
+    report = "46,XX,t(3;17)(q26.2;p13)[18]"
     #report = "46,XY,inv(16)(p13.2q22)[2]/47,sl,del(6)(q13q23),add(5)(q),+22[6]/48,sdl1,+13[4]/46,XY[4]"
     #report = "45,XX,-7[22]/46,idem,+12[3]/47,idem,+12,+20[5]"
     #report = "47,XY,+13,i(13)(q10)x2[2]/47,XY,+13[4]/46,XY[8]"
@@ -981,7 +983,7 @@ if __name__ == '__main__':
     #report = "46,XX,t(3;3)(q21.4;q26),inv(3)(q21q26)[20],inv(16)(p13q22.3)"
     #report = "46,XY,t(5;11)(q35;p11)?c,?add(16)(q23~q24)[10]"
     #report = "45,XX,add(1)(p11),-3,add(5)(q31),add(8)(p11),?add(9)(q34),-12,-13,-17,?add(19)(q13),-22,+4mar,inc[cp5]/46,XX[2]"
-    report = "49~51,XY,der(5)t(5;6)(q23;q13),-6,i(9)(q10),+11,del(12)(p12),+19,+22,+2~4mar,inc[21]"
+    #report = "49~51,XY,der(5)t(5;6)(q23;q13),-6,i(9)(q10),+11,del(12)(p12),+19,+22,+2~4mar,inc[21]"
     #report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
     #report = "46,XY,t(9;22;10)(q34;q11.2;q11)[12]/45,X,-Y,t(9;22;10)(q34;q11.2;q11)[8]"
     #report = "45,XY,-7,del(13)(q14q31),der(16)t(7;16)(q11.2;q12-13)[4]/46,XY[6]"
