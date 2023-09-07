@@ -139,7 +139,7 @@ def properties_dict(karyotypes, properties = None):
             v = re.escape(v)
             
             #formatting exception for deletions and additions
-            if re.search('add|del|i', v):
+            if re.search('^(add|del|i)', v):
                 v = re.sub('\\\\\)\\\\\(', '(?:\)\()?', v)
                 v = re.sub('\\\\\)$', '', v)
             
@@ -147,9 +147,9 @@ def properties_dict(karyotypes, properties = None):
             if re.search('[pq]\d{1,2}\\\.\d',v):
                 v = re.sub('([pq]\d{1,2})\\\.(\d)', dotreplace, v)
                 
-            #putting brackets at the end of inversions to stop catching
+            #putting brackets at the end to stop catching
             #wrong number on second chromosomes
-            if re.search('inv',v):
+            if re.search('^(del|add|idic|i|inv)',v):
                 v = v + '\)'
                 
         else:
