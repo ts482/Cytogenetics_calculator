@@ -463,8 +463,29 @@ def two_part_translocation_check(two_part_translocation,col_true, prop_dict,
     if verbose:
         return col_true, verbose_list
     return col_true
-    
 
+def split_loci_into_num_and_arm(locus):
+    '''
+    Helper function for setup warning dict
+
+    Parameters
+    ----------
+    loci : STR
+        a string representing a loci (that is likely clinically relevant)
+
+    Returns
+    -------
+    dictionary that splits the loci number from the chromsome arm
+
+    '''
+    
+    num, arm = re.search('(\d+)([qp].*)',locus).group(1,2)
+    return {'num':num, 'arm':arm}
+
+def setup_suspicious_dict():
+    loci = ['11q23.3', '3q26.2','11p15.4','17q21.2']
+    sus_dict = {l:split_loci_into_num_and_arm(l) for l in loci}
+    return sus_dict
 
 def parse_karyotype_clone(row, prop_dict, verbose=False):
     '''
@@ -476,8 +497,6 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     if verbose:
         row['chr_count'] = chr_count
         
-    #including warnings
-    row['Warnings'] = warning
     
     #checking for error
     if error:
@@ -642,7 +661,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                 
             
             #detecting presence on monosomies
-            if re.fullmatch('-[0-9XxYy]{1,2}', a):
+            if re.fullmatch('-[0-9]{1,2}', a): #used to be [0-9XxYy]
                 mono += 1
                 if re.fullmatch('-[0-9]{1,2}', a):
                     non_sex_mono +=1
@@ -709,6 +728,17 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                 seventeen_p = True
                 if verbose:
                     verbose_dict[a].append('17p')
+                    
+            #adding warnings onto suspicious abnormalities:
+            sus_dict = setup_suspicious_dict()
+            for k,v in sus_dict.items():
+                sus_num = v['num']
+                sus_arm = v['arm']
+                if re.search(f'{sus_num}(?:\)\()?{sus_arm}',a):
+                    warning.append(f'mutation found: {k}. This is not a' + \
+                        ' pre-defined mutation, but it may be clinically relevant')
+                    if verbose:
+                        verbose_dict[a].append(f'suspicious mutation: {k}')
             
                     
     #abnormality count is equal to all non-removed + der is double counted
@@ -720,6 +750,10 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     row['abnormal(17p)'] = seventeen_p
     
     row['NonSexChromosomeMonosomies'] = non_sex_mono
+    
+    #including warnings
+    row['Warnings'] = warning
+    
     for c in col_true:
         row[prop_dict[c]] = True
     if verbose:
@@ -980,7 +1014,7 @@ if __name__ == '__main__':
     #report = "47,XY,+11,t(3;19)(q26.2;p13.3)[4]"
     #report = " 46,xx,t(8;16)(p11.2;p13.3)[20]"
     #report = "45,XX,t(3;21)(q26;q?11.2),del(5)(q23-31q33),-7[14]"
-    report = "46,XX,t(3;17)(q26.2;p13)[18]"
+    #report = "46,XX,t(3;17)(q26.2;p13)[18]"
     #report = "46,XY,inv(16)(p13.2q22)[2]/47,sl,del(6)(q13q23),add(5)(q),+22[6]/48,sdl1,+13[4]/46,XY[4]"
     #report = "45,XX,-7[22]/46,idem,+12[3]/47,idem,+12,+20[5]"
     #report = "47,XY,+13,i(13)(q10)x2[2]/47,XY,+13[4]/46,XY[8]"
@@ -994,8 +1028,8 @@ if __name__ == '__main__':
     #report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
     #report = "46,XY,t(9;22;10)(q34;q11.2;q11)[12]/45,X,-Y,t(9;22;10)(q34;q11.2;q11)[8]"
     #report = "45,XY,-7,del(13)(q14q31),der(16)t(7;16)(q11.2;q12-13)[4]/46,XY[6]"
-    #report = "46,XX,t(9;11;5;22)(p21;q23.3;q35;q12)[10]"
-    report = "46,XX,inv(3)(q21.3q26.2)[20]"
+    report = "46,XX,t(9;11;5;22)(p21;q23.3;q35;q12)[10]"
+    #report = "46,XX,inv(3)(q21.3q26.2)[20]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE,
                                  only_positive= True)
     print(report)
