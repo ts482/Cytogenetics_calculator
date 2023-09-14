@@ -152,8 +152,8 @@ def properties_dict(karyotypes, properties = None):
             if re.search('^(del|add|idic|i|inv)',v):
                 porq = re.search('([pq])$',v)
                 if porq:
-                    v = v + '\d{1,2}?(?:[pq]\d{1,2}?)?|' + v[:-1] + \
-                        f'[pq]\d?\d?{porq.group(1)}\d?\d?'
+                    v = v + '\d{1,2}?(?:\.\d)?(?:[pq]\d{1,2}?(?:\.\d)?)?|' + v[:-1] + \
+                        f'[pq]\d?\d?(?:\.\d)?{porq.group(1)}\d?\d?(?:\.\d)?'
                 else:
                     v = v + '\)'
                 
