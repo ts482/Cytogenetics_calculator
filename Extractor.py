@@ -150,7 +150,12 @@ def properties_dict(karyotypes, properties = None):
             #putting brackets at the end to stop catching
             #wrong number on second chromosomes
             if re.search('^(del|add|idic|i|inv)',v):
-                v = v + '\)'
+                porq = re.search('([pq])$',v)
+                if porq:
+                    v = v + '\d{1,2}?(?:[pq]\d{1,2}?)?|' + v[:-1] + \
+                        f'[pq]\d?\d?{porq.group(1)}\d?\d?'
+                else:
+                    v = v + '\)'
                 
         else:
             v = substitute_v(v)
@@ -904,7 +909,7 @@ def extract_from_string(karyotype, prop_dict, bool_mode = 'string', fish = None,
               'Warnings': result['Warnings'],
               'result': result,
               'fish_available':False}
-    
+        
     if fish:
         output['fish_available'] = True
 
@@ -1028,8 +1033,8 @@ if __name__ == '__main__':
     #report = "47,XY,+21c[6]/48,sl,+11,der(19)t(1;19)(q23;p13.3)[4]"
     #report = "46,XY,t(9;22;10)(q34;q11.2;q11)[12]/45,X,-Y,t(9;22;10)(q34;q11.2;q11)[8]"
     #report = "45,XY,-7,del(13)(q14q31),der(16)t(7;16)(q11.2;q12-13)[4]/46,XY[6]"
-    report = "46,XX,t(9;11;5;22)(p21;q23.3;q35;q12)[10]"
-    #report = "46,XX,inv(3)(q21.3q26.2)[20]"
+    #report = "46,XX,t(9;11;5;22)(p21;q23.3;q35;q12)[10]"
+    report = "43~45,XX,-2,?del(3)(q2?),-4,del(4)(p1?),-6,-7,-10,add(12)(p1?),-15,-17,-19,+r,+5~6mar[cp10]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE,
                                  only_positive= True)
     print(report)
