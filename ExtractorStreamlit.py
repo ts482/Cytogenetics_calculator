@@ -30,9 +30,9 @@ from Extractor import *
 
 st.write('# Cytogenetics calculator')
 
-base_mode = st.radio('For the latest version, select \'ELN2022\'', ['ELN2022','BJH2021'])
+#base_mode = st.radio('For the latest version, select \'ELN2022\'', ['ELN2022','BJH2021'])
 
-prop_dict = available_configs()[base_mode]
+#prop_dict = available_configs()[base_mode]
 
 st.write('## text input')
 
@@ -102,4 +102,4 @@ cytogenetics = st.text_input('type/paste cytogenetic report here')
     #if st.button('Download Dataframe as CSV'):
     #    tmp_download_link = download_link(results, 'YOUR_DF.csv', 'Click here to download your data!')
     #    st.markdown(tmp_download_link, unsafe_allow_html=True)
-st.info('Uploaded data is never saved')
+st.write('Uploaded data is never saved')
