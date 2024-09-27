@@ -2,11 +2,10 @@
 
 import pandas as pd
 import streamlit as st
-import base64
 from Extractor import *
 
 
-
+st.cache_data.clear()
 
 def download_link(object_to_download, download_filename, download_link_text):
         """
