@@ -5,7 +5,6 @@ import streamlit as st
 from Extractor import *
 
 
-st.cache_data.clear()
 
 # def download_link(object_to_download, download_filename, download_link_text):
 #         """
