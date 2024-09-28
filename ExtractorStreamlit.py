@@ -30,9 +30,9 @@ from Extractor import *
 
 st.write('# Cytogenetics calculator')
 
-#base_mode = st.radio('For the latest version, select \'ELN2022\'', ['ELN2022','BJH2021'])
+base_mode = st.radio('For the latest version, select \'ELN2022\'', ['ELN2022','BJH2021'])
 
-#prop_dict = available_configs()[base_mode]
+prop_dict = available_configs()[base_mode]
 
 st.write('## text input')
 
