@@ -75,30 +75,30 @@ if cytogenetics:
         
         
 
-# st.write('## file input')
-# file = st.file_uploader("Upload CSV file here")
-# if file:
-#     karyotypes = load_file(file)
-#     karyotypes['Error'] = bool(False)
-#     karyotypes['Error description'] = None
-#     results = karyotypes.apply(parse_karyotype_clone, axis=1, args= (prop_dict,))
-#     results.loc[results['Error'] == False] = results.loc[results['Error']==False].fillna(False)
-#     results['Error'] = results['Error'].astype(bool)
+st.write('## file input')
+file = st.file_uploader("Upload CSV file here")
+if file:
+    karyotypes = load_file(file)
+    karyotypes['Error'] = bool(False)
+    karyotypes['Error description'] = None
+    results = karyotypes.apply(parse_karyotype_clone, axis=1, args= (prop_dict,))
+    results.loc[results['Error'] == False] = results.loc[results['Error']==False].fillna(False)
+    results['Error'] = results['Error'].astype(bool)
     
-#     #sorting column order
-#     first_order_cols = ['Cytogenetics', 'Error', 'Error description', 'Warnings',
-#              'Number of cytogenetic abnormalities', 'Polysomy','Monosomy',
-#                         'NonSexChromosomeMonosomies', 'Structural']
-#     rest_cols = [c for c in results.columns if c not in first_order_cols]
-#     results = results[first_order_cols + rest_cols]
-    #st.dataframe(results)
+    #sorting column order
+    first_order_cols = ['Cytogenetics', 'Error', 'Error description', 'Warnings',
+             'Number of cytogenetic abnormalities', 'Polysomy','Monosomy',
+                        'NonSexChromosomeMonosomies', 'Structural']
+    rest_cols = [c for c in results.columns if c not in first_order_cols]
+    results = results[first_order_cols + rest_cols]
+    st.dataframe(results)
     
-    #st.download_button(
-    #     label="Click to download results as CSV",
-    #     data=results
-    #     file_name='cytogenetics_results.csv',
-    #     mime='text/csv',
-    # )
+    st.download_button(
+        label="Click to download results as CSV",
+        data=results
+        file_name='cytogenetics_results.csv',
+        mime='text/csv',
+    )
     #if st.button('Download Dataframe as CSV'):
     #    tmp_download_link = download_link(results, 'YOUR_DF.csv', 'Click here to download your data!')
     #    st.markdown(tmp_download_link, unsafe_allow_html=True)
