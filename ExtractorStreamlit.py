@@ -95,7 +95,7 @@ if file:
     
     st.download_button(
         label="Click to download results as CSV",
-        data=results
+        data=results,
         file_name='cytogenetics_results.csv',
         mime='text/csv',
     )
