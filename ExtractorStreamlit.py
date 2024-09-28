@@ -37,40 +37,40 @@ st.write('# Cytogenetics calculator')
 st.write('## text input')
 
 cytogenetics = st.text_input('type/paste cytogenetic report here')
-# if cytogenetics:
-#     st.write(cytogenetics)
-#     result = extract_from_string(cytogenetics, prop_dict, only_positive=True)
-#     st.write('#### Results')
-#     if result['error']:
-#         st.write('ERROR PRESENT:')
-#         st.write('-'*20)
-#         for m in result['error_message']:
-#             st.write(m)
-#     else:
-#         st.write('-'*20)
-#         if len(result['Warnings'])>0:
-#             st.write('### WARNING')
-#             for w in result['Warnings']:
-#                 st.write(w)
-#             st.write('-'*20)
+if cytogenetics:
+    st.write(cytogenetics)
+    result = extract_from_string(cytogenetics, prop_dict, only_positive=True)
+    st.write('#### Results')
+    if result['error']:
+        st.write('ERROR PRESENT:')
+        st.write('-'*20)
+        for m in result['error_message']:
+            st.write(m)
+    else:
+        st.write('-'*20)
+        if len(result['Warnings'])>0:
+            st.write('### WARNING')
+            for w in result['Warnings']:
+                st.write(w)
+            st.write('-'*20)
             
-#         st.write('Number of cytogenetic abnormalities: ', 
-#                  result['result']['Number of cytogenetic abnormalities'])
-#         st.write('Polysomy count:', 
-#                  result['result']['Polysomy'])
-#         st.write('Monosomy count:', 
-#                  result['result']['Monosomy'])
-#         st.write('Structural abnormality count: ', 
-#                  result['result']['Structural'])
+        st.write('Number of cytogenetic abnormalities: ', 
+                 result['result']['Number of cytogenetic abnormalities'])
+        st.write('Polysomy count:', 
+                 result['result']['Polysomy'])
+        st.write('Monosomy count:', 
+                 result['result']['Monosomy'])
+        st.write('Structural abnormality count: ', 
+                 result['result']['Structural'])
         
-#         non_count_results = [r for r in result['result'] if r not in 
-#                              ['Number of cytogenetic abnormalities',
-#                               'Polysomy','Monosomy', 'NonSexChromosomeMonosomies',
-#                               'Structural', 'Warnings',
-#                               'Cytogenetics', 'Error', 'Error description']]
-#         if len(non_count_results)>0:    
-#             st.write(f'Other abnormalities detected from pre-set list: {non_count_results}')
-#         st.write('-'*20)
+        non_count_results = [r for r in result['result'] if r not in 
+                             ['Number of cytogenetic abnormalities',
+                              'Polysomy','Monosomy', 'NonSexChromosomeMonosomies',
+                              'Structural', 'Warnings',
+                              'Cytogenetics', 'Error', 'Error description']]
+        if len(non_count_results)>0:    
+            st.write(f'Other abnormalities detected from pre-set list: {non_count_results}')
+        st.write('-'*20)
         
         
         
