@@ -93,9 +93,14 @@ if file:
     results = results[first_order_cols + rest_cols]
     st.dataframe(results)
     
+    @st.cache_data
+    def convert_df(df):
+        # IMPORTANT: Cache the conversion to prevent computation on every rerun
+        return df.to_csv().encode("utf-8")
+
     st.download_button(
         label="Click to download results as CSV",
-        data=results,
+        data=convert_df(results),
         file_name='cytogenetics_results.csv',
         mime='text/csv',
     )
