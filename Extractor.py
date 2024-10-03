@@ -516,6 +516,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     #preparing string before splitting to abnormalities
     full_string = row['Cytogenetics']
     full_string = re.sub('\?', '', full_string)
+    print(full_string)
     
     #splitting into clones
     clones = list(re.split('/', full_string))
