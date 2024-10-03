@@ -516,7 +516,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
     #preparing string before splitting to abnormalities
     full_string = row['Cytogenetics']
     full_string = re.sub('\?', '', full_string)
-    print(full_string)
+    #print(full_string) - for debugging
     
     #splitting into clones
     clones = list(re.split('/', full_string))
@@ -548,7 +548,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
                     idem_sl_multiplier = int(multiplier.group(1))
                 else:
                     non_x_string = re.sub('x(\d)$', '', a)
-                    for i in range(int(multiplier.group(1))): 
+                    for n in range(int(multiplier.group(1))): 
                         plicates.append(non_x_string)
                     removed.add(a)
                     
@@ -1035,7 +1035,8 @@ if __name__ == '__main__':
     #report = "46,XY,t(9;22;10)(q34;q11.2;q11)[12]/45,X,-Y,t(9;22;10)(q34;q11.2;q11)[8]"
     #report = "45,XY,-7,del(13)(q14q31),der(16)t(7;16)(q11.2;q12-13)[4]/46,XY[6]"
     #report = "46,XX,t(9;11;5;22)(p21;q23.3;q35;q12)[10]"
-    report = "43~45,XX,-2,?del(3)(q2?),-4,del(4)(p1?),-6,-7,-10,add(12)(p1?),-15,-17,-19,+r,+5~6mar[cp10]"
+    #report = "43~45,XX,-2,?del(3)(q2?),-4,del(4)(p1?),-6,-7,-10,add(12)(p1?),-15,-17,-19,+r,+5~6mar[cp10]"
+    report = "47,XX,add(5)(q21),add(5)(q35),del(7)(q22),-17,-21,+22,+mar1,+mar2,+mar3[cp2]/49,sl,add(11)(q22),-13,-16,+mar3x4[cp2]/48,sdl,-X,-4,+mar4[cp6]"
     result = extract_from_string(report, props, fish=fish_results, verbose = VERBOSE,
                                  only_positive= True)
     print(report)
