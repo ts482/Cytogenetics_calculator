@@ -504,7 +504,7 @@ def parse_karyotype_clone(row, prop_dict, verbose=False):
         
     
     #checking for error
-    if error:
+    if len(error)>0:
         row['Error description'] = error
         row['Error'] = True
         if verbose:
